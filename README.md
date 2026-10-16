@@ -19,6 +19,7 @@ the member gets a receipt.
 | Members are identified by a member code (e.g. `C19-7KQ4M`) that an admin issues. New accounts wait for an admin's approval. | `handle_new_user`, `admin_set_account_status` |
 | Late joiners owe every month since the dues start month. | `ensure_dues` |
 | Only confirmed payments count as collections; only approved expenses reduce the balance. | `finance_summary` |
+| Giving or removing admin rights takes two admins: one proposes, another confirms within 7 days. | `admin_change_role` |
 | Every important action is written to an append-only audit log. | `audit_logs` |
 
 The browser can only **read** tables, and row level security limits members to their
@@ -50,13 +51,14 @@ supabase/tests/rules_test.sql   end-to-end test of the rules (rolls itself back)
    not enough to onboard a whole class. Either add your own SMTP (Authentication → Emails → SMTP),
    or turn off "Confirm email" (Authentication → Providers → Email). Turning it off is reasonable here
    because every new account already waits for an admin's approval; password-reset emails still need SMTP to be reliable.
-4. **Make the first admin:** register on the site like everyone else, then run in the SQL editor
-   (replace the email):
+4. **Make the first two admins:** both register on the site like everyone else, then run in the SQL editor
+   (replace the emails):
    ```sql
    update public.profiles set is_admin = true, account_status = 'active'
-   where email = 'you@example.com';
+   where email in ('first@example.com', 'second@example.com');
    ```
-   After that, admins promote others from Admin → Members → Manage. Make at least three.
+   After that, admin rights are changed from Admin → Members → Manage: one admin proposes, another confirms.
+   Make at least three admins, since nobody can review their own payment.
 5. **Before members join:** set the MoMo instructions in Admin → Settings and check the
    dues start month (currently October 2026).
 6. **Add the class list** in Admin → Members. Each person gets a code to share (there's a WhatsApp button).
@@ -68,7 +70,7 @@ sends in-app reminders 5 days before the due date, on it, and when dues are 3+ d
 
 Paste `supabase/tests/rules_test.sql` into the Supabase SQL editor and run it. It creates fictional
 admins and members, walks through every rule above, and rolls everything back. The last line should read
-`ALL 19 CHECKS PASSED (rolled back)` (it is reported as an error on purpose — that is what undoes the changes).
+`ALL 20 CHECKS PASSED (rolled back)` (it is reported as an error on purpose — that is what undoes the changes).
 
 ## Notes
 

@@ -20,7 +20,7 @@ function subnav(current) {
   const items = [
     ['admin', 'Overview'],
     ['admin/review', 'Payments', c.pending_payments],
-    ['admin/members', 'Members', c.pending_accounts],
+    ['admin/members', 'Members', (c.pending_accounts || 0) + (c.pending_roles || 0)],
     ['admin/expenses', 'Expenses', c.pending_expenses],
     ['admin/reports', 'Reports'],
     ['admin/settings', 'Settings'],
@@ -53,6 +53,7 @@ export async function dashboard() {
     s.pending_payments && ['admin/review', 'pay', `${s.pending_payments} payment${s.pending_payments > 1 ? 's' : ''} to check`, cedis(s.awaiting_review) + ' waiting'],
     s.pending_accounts && ['admin/members', 'users', `${s.pending_accounts} sign-up${s.pending_accounts > 1 ? 's' : ''} to confirm`, 'New members waiting for approval'],
     s.pending_expenses && ['admin/expenses', 'wallet', `${s.pending_expenses} expense${s.pending_expenses > 1 ? 's' : ''} to review`, 'Needs two admins other than the recorder'],
+    s.pending_roles && ['admin/members', 'shield', `${s.pending_roles} admin change${s.pending_roles > 1 ? 's' : ''} to confirm`, 'Another admin proposed it; a second admin must agree'],
   ].filter(Boolean);
 
   return page('admin', 'Overview', `${s.active_members} active members · figures count confirmed payments and approved expenses only.`,
@@ -165,11 +166,14 @@ export async function review(route) {
 // ---------------------------------------------------------------- members
 export async function members() {
   await loadCounts();
-  const [roster, people, owed] = await Promise.all([
+  const weekAgo = new Date(Date.now() - 7 * 864e5).toISOString();
+  const [roster, people, owed, proposals] = await Promise.all([
     fetchAll(() => sb.from('members').select('*').order('full_name')),
     profilesById(),
     fetchAll(() => sb.from('dues_overview').select('member_id, amount_due, state').in('state', ['overdue', 'open'])),
+    run(sb.from('admin_role_proposals').select('*').is('closed_at', null).gt('created_at', weekAgo)),
   ]);
+  const proposalFor = new Map(proposals.map((x) => [x.profile_id, x]));
   const me = state.session.user.id;
   const owing = new Map();
   for (const d of owed) {
@@ -250,7 +254,8 @@ export async function members() {
             p.account_status === 'active' ? 'Active' : p.account_status === 'pending' ? 'Waiting' : 'Blocked'), p.is_admin ? chip('admin', 'Admin') : null)
           : h('span', { class: 'muted small' }, 'Not registered')),
         h('td', { class: 'r num nowrap' }, o?.overdue ? h('span', { class: 'chip overdue' }, cedis(o.overdue)) : o?.open ? cedis(o.open) : h('span', { class: 'muted' }, '—')),
-        h('td', { class: 'r' }, h('button', { class: 'btn small ghost', type: 'button', onclick: () => editMember(m, p, me, refreshMembers) }, 'Manage')));
+        h('td', { class: 'r' }, h('button', { class: 'btn small ghost', type: 'button', onclick: () => editMember(m, p, me, refreshMembers, proposalFor.get(p?.id), people) },
+          proposalFor.has(p?.id) ? h('span', { class: 'badge-dot', 'aria-label': 'Admin change waiting' }) : null, 'Manage')));
     }));
   };
   search.addEventListener('input', drawRoster);
@@ -258,6 +263,21 @@ export async function members() {
 
   return page('admin/members', 'Members',
     'Add classmates to the list, share their code, and confirm them when they sign up.',
+    proposals.length ? h('section', { class: 'card' },
+      h('div', { class: 'card-head' }, h('h2', {}, 'Admin changes to confirm')),
+      h('ul', { class: 'list' }, proposals.map((x) => {
+        const target = people.get(x.profile_id);
+        const mineProp = x.proposed_by === me;
+        return h('li', { class: 'spread' },
+          h('div', {}, h('p', { class: 'item-title' }, `${x.make_admin ? 'Make' : 'Remove'} ${target?.full_name || 'someone'} ${x.make_admin ? 'an admin' : 'as admin'}`),
+            h('p', { class: 'small muted' }, `Proposed by ${people.get(x.proposed_by)?.full_name || 'an admin'} ${relative(x.created_at)}`)),
+          mineProp || x.profile_id === me ? h('span', { class: 'small muted' }, mineProp ? 'Waiting for another admin' : 'About you')
+            : h('button', { class: 'btn small primary', type: 'button', onclick: (e) => busy(e.currentTarget, async () => {
+                if (!await ask({ title: 'Confirm this change?', body: 'Admins approve payments and expenses. Only confirm if the class executives agreed.', confirm: 'Confirm' })) return;
+                await rpc('admin_change_role', { p_profile: x.profile_id, p_make_admin: x.make_admin });
+                toast('Done.'); refreshMembers();
+              }) }, 'Confirm'));
+      }))) : null,
     h('section', { class: 'card' }, h('div', { class: 'card-head' }, h('h2', {}, 'Sign-ups waiting'), h('span', { class: 'muted' }, `${pending.length}`)), pendingList),
     h('section', { class: 'card' }, h('div', { class: 'card-head' }, h('h2', {}, 'Add a member')), addForm),
     h('section', { class: 'card' },
@@ -268,7 +288,7 @@ export async function members() {
         tbody))));
 }
 
-function editMember(m, p, me, done) {
+function editMember(m, p, me, done, proposal, people) {
   const name = h('input', { class: 'input', value: m.full_name, maxlength: '120' });
   const phone = h('input', { class: 'input', value: m.phone || '', inputmode: 'numeric', maxlength: '10' });
   const active = h('input', { type: 'checkbox', checked: m.is_active });
@@ -278,6 +298,18 @@ function editMember(m, p, me, done) {
   }) }, label);
 
   const self = p?.id === me;
+  // Admin rights change only when a second admin confirms a proposal.
+  const roleButton = () => {
+    const make = !p.is_admin;
+    const open = proposal && proposal.make_admin === make;
+    if (open && proposal.proposed_by === me) return h('span', { class: 'small muted' }, 'You proposed an admin change; waiting for another admin.');
+    const label = open ? `Confirm: ${make ? 'make admin' : 'remove admin'} (proposed by ${shortName(people.get(proposal.proposed_by))})`
+                       : make ? 'Propose as admin' : 'Propose removing admin';
+    return action(label, async () => {
+      const r = await rpc('admin_change_role', { p_profile: p.id, p_make_admin: make });
+      toast(r === 'done' ? 'Done — two admins agreed.' : 'Proposed. Another admin must confirm.');
+    }, open ? 'primary' : '');
+  };
   const dlg = h('dialog', { class: 'sheet' },
     h('h2', {}, m.full_name), h('p', { class: 'small muted mono' }, m.member_code),
     h('div', { class: 'stack', style: null },
@@ -295,9 +327,7 @@ function editMember(m, p, me, done) {
         p.account_status === 'active'
           ? action('Block account', () => rpc('admin_set_account_status', { p_profile: p.id, p_status: 'suspended' }), 'danger')
           : action('Activate account', () => rpc('admin_set_account_status', { p_profile: p.id, p_status: 'active' })),
-        p.account_status === 'active'
-          ? action(p.is_admin ? 'Remove admin' : 'Make admin', () => rpc('admin_set_admin', { p_profile: p.id, p_is_admin: !p.is_admin }))
-          : null,
+        p.account_status === 'active' ? roleButton() : null,
         action('Unlink code', () => rpc('admin_release_member_code', { p_member: m.id })))) : null,
     self ? h('p', { class: 'small muted' }, 'This is you. Another admin must change your account.') : null,
     h('div', { class: 'sheet-actions' }, h('button', { class: 'btn ghost', type: 'button', onclick: () => { dlg.close(); dlg.remove(); } }, 'Close')));
@@ -620,7 +650,9 @@ const ACTIONS = {
   'member.added': 'added a member', 'member.updated': 'edited a member', 'member_code.claimed': 'linked a member code',
   'member_code.failed': 'entered a wrong member code', 'member_code.released': 'unlinked a member code',
   'account.active': 'activated an account', 'account.suspended': 'blocked an account', 'account.pending': 'set an account to waiting',
-  'admin.granted': 'made someone an admin', 'admin.revoked': 'removed an admin', 'settings.updated': 'changed settings',
+  'admin.granted': 'confirmed a new admin', 'admin.revoked': 'confirmed removing an admin',
+  'admin.grant_proposed': 'proposed a new admin', 'admin.revoke_proposed': 'proposed removing an admin',
+  'settings.updated': 'changed settings',
   'dues.generated': 'created monthly dues',
 };
 

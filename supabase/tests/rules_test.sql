@@ -12,6 +12,7 @@ declare
   a3 uuid := gen_random_uuid();  -- admin
   m1 uuid := gen_random_uuid();  -- member
   m2 uuid := gen_random_uuid();  -- second member
+  pup uuid := gen_random_uuid(); -- account one admin tries to promote alone
   code1 text; code2 text; code_a1 text;
   pay1 uuid; pay2 uuid; pay3 uuid; pay4 uuid; pay_a1 uuid; exp1 uuid;
   st text; n int; j jsonb;
@@ -289,6 +290,30 @@ begin
   select count(*) into n from public.audit_logs
    where action in ('payment.approved', 'payment.rejected', 'expense.recorded', 'account.active');
   if n < 5 then raise exception 'FAIL 18: audit log has only % key events', n; end if;
+  checks := checks + 1;
+
+  -- 19. Admin rights need two admins: one proposes, a different one confirms.
+  insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
+  values (pup, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'pup@test.invalid', '{"full_name":"Puppet"}', now(), now());
+  update public.profiles set account_status = 'active' where id = pup;
+  perform set_config('request.jwt.claims', json_build_object('sub', a1, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  begin
+    perform public.admin_set_admin(pup, true);
+    raise exception 'FAIL 19: retired single-admin function still callable';
+  exception when insufficient_privilege then null;
+  end;
+  if public.admin_change_role(pup, true) <> 'proposed' then raise exception 'FAIL 19: not a proposal'; end if;
+  begin
+    perform public.admin_change_role(pup, true);
+    raise exception 'FAIL 19: proposer confirmed own proposal';
+  exception when sqlstate 'P0001' then null;
+  end;
+  perform set_config('request.jwt.claims', json_build_object('sub', a2, 'role', 'authenticated')::text, true);
+  if public.admin_change_role(pup, true) <> 'done' then raise exception 'FAIL 19: second admin could not confirm'; end if;
+  perform set_config('request.jwt.claims', json_build_object('sub', pup, 'role', 'authenticated')::text, true);
+  if public.admin_change_role(a1, false) <> 'proposed' then raise exception 'FAIL 19: one admin removed another'; end if;
+  reset role;
   checks := checks + 1;
 
   raise exception 'ALL % CHECKS PASSED (rolled back)', checks;
