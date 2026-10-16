@@ -1,5 +1,6 @@
 import { sb, state, loadIdentity, isAdmin, isActive } from './api.js';
 import { h, mount, icon } from './ui.js';
+import { skeleton } from './skeleton.js';
 import { setRenderer, go } from './nav.js';
 import { GROUP_SHORT, SCHOOL } from './config.js';
 import * as auth from './views/auth.js';
@@ -12,19 +13,19 @@ const app = document.getElementById('app');
 // Keyed by the first one or two path segments; `tab` is the bottom tab to
 // highlight, and admin pages use the wide layout and require an admin.
 const routes = {
-  '': { view: member.home, tab: '' },
-  pay: { view: member.pay, tab: 'pay' },
-  history: { view: member.history, tab: 'history' },
-  receipt: { view: member.receipt, tab: 'history' }, // receipt/<payment id>
-  notices: { view: member.notices, tab: '' },
-  account: { view: member.account, tab: 'account' },
-  admin: { view: admin.dashboard, admin: true },
-  'admin/review': { view: admin.review, admin: true },
-  'admin/members': { view: admin.members, admin: true },
-  'admin/expenses': { view: admin.expenses, admin: true },
-  'admin/reports': { view: admin.reports, admin: true },
-  'admin/settings': { view: admin.settings, admin: true },
-  'admin/audit': { view: admin.audit, admin: true },
+  '': { view: member.home, tab: '', loading: 'home' },
+  pay: { view: member.pay, tab: 'pay', loading: 'form' },
+  history: { view: member.history, tab: 'history', loading: 'list' },
+  receipt: { view: member.receipt, tab: 'history', loading: 'receipt' }, // receipt/<payment id>
+  notices: { view: member.notices, tab: '', loading: 'list' },
+  account: { view: member.account, tab: 'account', loading: 'form' },
+  admin: { view: admin.dashboard, admin: true, loading: 'overview' },
+  'admin/review': { view: admin.review, admin: true, loading: 'adminList' },
+  'admin/members': { view: admin.members, admin: true, loading: 'adminList' },
+  'admin/expenses': { view: admin.expenses, admin: true, loading: 'adminList' },
+  'admin/reports': { view: admin.reports, admin: true, loading: 'adminList' },
+  'admin/settings': { view: admin.settings, admin: true, loading: 'adminForm' },
+  'admin/audit': { view: admin.audit, admin: true, loading: 'adminList' },
 };
 const findRoute = (route) => {
   const entry = routes[route.parts.slice(0, 2).join('/')] || routes[route.parts[0] || ''];
@@ -84,7 +85,7 @@ async function render() {
 
   const entry = findRoute(route);
 
-  const holder = h('div', { class: 'stack-lg' }, h('div', { class: 'empty' }, 'Loading…'));
+  const holder = h('div', {}, skeleton(entry.loading));
   mount(app, chrome(entry, holder));
   try {
     const content = await entry.view(route);

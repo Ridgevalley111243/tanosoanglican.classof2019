@@ -110,8 +110,12 @@ const fakeJwt = (sub) => ['eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9', Buffer.from(JS
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, timezoneId: 'Africa/Accra' });
 await ctx.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.fulfill({ status: 200, contentType: 'text/css', body: '' }));
+// SLOW=1 holds every backend reply for 3 s so the loading skeletons can be screenshotted.
+const SLOW = process.env.SLOW === '1';
 await ctx.route(/supabase\.co/, async (route) => {
   const req = route.request();
+  // Identity lookups stay fast so the page-specific skeleton is what gets captured.
+  if (SLOW && !/\/(profiles|members|group_settings)\?/.test(req.url())) await new Promise((r) => setTimeout(r, 3000));
   const url = new URL(req.url());
   const json = (body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
   if (url.pathname.startsWith('/rest/v1/rpc/')) {
@@ -148,7 +152,7 @@ if (who !== 'anon') {
 const routes = (process.argv[4] || 'home').split(',').filter(Boolean);
 for (const r of routes) {
   await page.goto(`${BASE}#/${r === "home" ? "" : r}`);
-  await page.waitForTimeout(900);
+  await page.waitForTimeout(SLOW ? 500 : 900);
   const name = `${who}-${(r || 'home').replace(/[/?=]/g, '_')}`;
   await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true });
   console.log('shot', name);

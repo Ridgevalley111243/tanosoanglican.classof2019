@@ -19,9 +19,17 @@
 <body>
   <div class="ledger" aria-hidden="true"></div>
   <div id="app" aria-live="polite">
-    <div class="boot">
-      <div class="boot-mark">C19</div>
-      <p>Opening the dues book…</p>
+    <!-- Skeleton shown until the app has loaded; replaced by the first page. -->
+    <div class="shell sk-page" aria-busy="true" aria-label="Loading">
+      <div class="topbar">
+        <span class="brand"><span class="brand-mark" aria-hidden="true">19</span>
+          <span class="brand-text"><b>Class of 2019 Dues</b><span>Tanoso Anglican J.H.S “A”</span></span></span>
+      </div>
+      <div class="stack-lg">
+        <span class="sk sk-greeting w-58"></span>
+        <div class="card sk-card"><span class="sk w-22"></span><span class="sk sk-figure w-46"></span><span class="sk w-70"></span></div>
+        <div class="card sk-card"><span class="sk sk-title w-36"></span><span class="sk w-90"></span><span class="sk w-75"></span></div>
+      </div>
     </div>
   </div>
   <div id="toasts" role="status" aria-live="polite"></div>

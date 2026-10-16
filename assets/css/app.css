@@ -356,9 +356,6 @@ dialog.sheet::backdrop { background: rgba(13,27,51,.32); -webkit-backdrop-filter
 details.table-view summary { cursor: pointer; font-size: .85rem; color: var(--blue); margin-top: 10px; }
 
 /* ---------- misc ---------- */
-.boot { min-height: 100vh; display: grid; place-content: center; justify-items: center; gap: 14px; color: var(--muted); }
-.boot-mark { width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center; color: #fff; font-family: var(--serif); font-style: italic; font-size: 1.4rem; background: linear-gradient(160deg, var(--blue-2), var(--blue)); animation: breathe 1.4s ease-in-out infinite; }
-@keyframes breathe { 50% { transform: scale(.94); opacity: .8; } }
 .noscript { padding: 20px; text-align: center; }
 .code-big { font-family: var(--mono); font-size: 1.8rem; font-weight: 700; letter-spacing: .1em; color: var(--blue-deep); }
 .badge-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--overdue); margin-left: 4px; vertical-align: middle; }
@@ -411,3 +408,30 @@ a.notice { text-decoration: none; color: inherit; }
 .card .glass { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(255,255,255,.62); }
 .receipt th.r, .receipt td.r { text-align: right; }
 .receipt-head .mono { white-space: nowrap; }
+
+/* ---------- skeleton loading ---------- */
+.sk {
+  display: block; height: 12px; border-radius: 7px;
+  background: linear-gradient(90deg, rgba(14,47,138,.07) 30%, rgba(255,255,255,.75) 50%, rgba(14,47,138,.07) 70%);
+  background-size: 300% 100%;
+  animation: shimmer 1.3s ease-in-out infinite;
+}
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
+.sk-card > * + * { margin-top: 12px; }
+.sk-lines { display: grid; gap: 8px; }
+.sk-title { height: 18px; }
+.sk-greeting { height: 34px; border-radius: 10px; margin: 8px 2px 4px; }
+.sk-figure { height: 48px; border-radius: 12px; }
+.sk-btn { height: 44px; border-radius: 13px; }
+.sk-input { height: 46px; border-radius: 12px; }
+.sk-pill { height: 24px; border-radius: 999px; flex: none; }
+.sk-chip { height: 34px; border-radius: 999px; flex: none; }
+.sk-month { height: 54px; border-radius: 12px; }
+.sk-stat { height: 24px; margin-top: 8px; }
+.sk-list { display: grid; }
+.sk-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 0; border-top: 1px solid var(--line); }
+.sk-row:first-child { border-top: 0; padding-top: 2px; }
+.sk-row .sk-lines { flex: 1; }
+.sk-subnav { overflow: hidden; }
+.w-22 { width: 22%; } .w-36 { width: 36%; } .w-46 { width: 46%; } .w-58 { width: 58%; }
+.w-70 { width: 70%; } .w-75 { width: 75%; } .w-90 { width: 90%; }
