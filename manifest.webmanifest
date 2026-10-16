@@ -1,0 +1,11 @@
+{
+  "name": "Class of 2019 Dues",
+  "short_name": "C19 Dues",
+  "description": "Monthly dues for the Class of 2019, Tanoso Anglican J.H.S \"A\".",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#e9f0fa",
+  "theme_color": "#e9f0fa",
+  "icons": [{ "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
