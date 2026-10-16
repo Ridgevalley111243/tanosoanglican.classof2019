@@ -516,3 +516,7 @@ dialog.sheet p + p { margin-top: 8px; }
 .legal-sec p, .legal-sec li { color: var(--ink-2); }
 .legal-foot { margin-top: 26px; padding-top: 14px; border-top: 1px solid var(--line); font-size: .9rem; }
 .footer-note a { color: var(--muted); }
+
+.terms-sheet > * + * { margin-top: 10px; }
+.terms-sheet .terms-points { margin: 6px 0 0; padding-left: 18px; color: var(--ink-2); }
+.terms-sheet .terms-points li + li { margin-top: 4px; }

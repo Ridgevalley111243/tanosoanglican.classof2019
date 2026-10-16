@@ -663,6 +663,7 @@ const ACTIONS = {
   'admin.bootstrap': 'set up as a founding admin',
   'admin.grant_proposed': 'proposed a new admin', 'admin.revoke_proposed': 'proposed removing an admin',
   'settings.updated': 'changed settings',
+  'terms.accepted': 'accepted the terms and privacy policy',
   'dues.generated': 'created monthly dues',
 };
 

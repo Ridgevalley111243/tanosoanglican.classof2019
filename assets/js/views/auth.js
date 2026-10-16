@@ -1,7 +1,7 @@
 import { sb, state, rpc, friendlyError } from '../api.js';
 import { h, icon, field, toast, mount, form, sheet, copyText } from '../ui.js';
 import { refresh } from '../nav.js';
-import { SCHOOL } from '../config.js';
+import { SCHOOL, TERMS_VERSION } from '../config.js';
 
 const siteUrl = () => location.origin + location.pathname;
 
@@ -77,7 +77,7 @@ export function register() {
       const { data, error } = await sb.auth.signUp({
         email: fd.get('email').trim(),
         password: fd.get('password'),
-        options: { emailRedirectTo: siteUrl(), data: { full_name: fullName, phone, member_code: code || null, terms_accepted_at: new Date().toISOString() } },
+        options: { emailRedirectTo: siteUrl(), data: { full_name: fullName, phone, member_code: code || null, terms_version: TERMS_VERSION } },
       });
       if (error) throw new Error(friendlyError(error));
       if (!data.session) {

@@ -38,6 +38,9 @@ const profiles = [
   { id: KOFI, full_name: 'Kofi Asante', email: 'kofi@yahoo.com', is_admin: true, account_status: 'active', created_at: '2026-01-05T10:00:00Z' },
   { id: 'p4', full_name: 'Abena Owusu', email: 'abena.owusu@gmail.com', is_admin: false, account_status: 'pending', created_at: '2026-10-16T09:12:00Z' },
 ];
+// NOTERMS=1 shows the screens as someone who hasn't accepted the terms yet.
+if (!process.env.NOTERMS) for (const p of profiles) p.terms_version = '2026-10-16';
+
 const members = [
   { id: 'm1', member_code: 'C19-7KQ4M', full_name: 'Yaw Mensah', phone: '0241234567', profile_id: YAW, is_active: true },
   { id: 'm2', member_code: 'C19-H3XPA', full_name: 'Ama Boateng', phone: '0209876543', profile_id: AMA, is_active: true },

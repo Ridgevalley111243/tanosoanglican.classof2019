@@ -1,10 +1,55 @@
-import { h, icon } from '../ui.js';
-import { state } from '../api.js';
-import { GROUP_SHORT, SCHOOL } from '../config.js';
+import { h, icon, toast, mount, errorBox } from '../ui.js';
+import { sb, state, rpc } from '../api.js';
+import { GROUP_SHORT, SCHOOL, TERMS_VERSION } from '../config.js';
 
 // Terms and privacy, written to match what the system actually does.
-// If a rule in the database changes, update the matching line here.
-const UPDATED = '16 October 2026';
+// If a rule in the database changes, update the matching line here and bump TERMS_VERSION.
+const UPDATED = new Date(`${TERMS_VERSION}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+
+export const needsTerms = () => !!state.profile && state.profile.terms_version !== TERMS_VERSION;
+
+// Asked once after sign-in of anyone who hasn't accepted the current version
+// (everyone who registered before the documents existed, admins included).
+// It can't be dismissed: the only ways out are agreeing or signing out.
+let open = false;
+export function askTerms() {
+  if (open || !needsTerms()) return;
+  open = true;
+  const agree = h('input', { type: 'checkbox' });
+  const err = h('div');
+  const newTab = { target: '_blank', rel: 'noopener' };
+  const dlg = h('dialog', { class: 'sheet terms-sheet', 'aria-labelledby': 'terms-title' },
+    h('img', { class: 'brand-logo', src: 'assets/logo.png', alt: '', width: '44', height: '44' }),
+    h('h2', { id: 'terms-title' }, state.profile.terms_version ? 'Our terms have been updated' : 'Before you continue'),
+    h('p', { class: 'small' }, 'Please read and accept how the class dues site works and how your information is used:'),
+    h('ul', { class: 'small terms-points' },
+      h('li', {}, 'You pay by Mobile Money directly; the site only records payments and never asks for your PIN.'),
+      h('li', {}, 'A payment counts only after two different admins confirm it on the MoMo statement.'),
+      h('li', {}, 'Dues are GH₵20 a month, whole months only, due on the 5th of the next month.'),
+      h('li', {}, 'You see only your own records; admins see everyone’s so they can run the dues.')),
+    h('p', { class: 'small' }, 'Read the full ', h('a', { href: '#/terms', ...newTab }, 'terms and conditions'), ' and ',
+      h('a', { href: '#/privacy', ...newTab }, 'privacy policy'), '.'),
+    h('label', { class: 'check' }, agree, h('span', {}, 'I have read and agree to the terms and conditions and privacy policy.')),
+    err,
+    h('div', { class: 'sheet-actions' },
+      h('button', { class: 'btn ghost', type: 'button', onclick: () => sb.auth.signOut() }, 'Sign out'),
+      h('button', { class: 'btn primary', type: 'button', onclick: async (e) => {
+        if (!agree.checked) { mount(err, errorBox('Tick the box to agree, or sign out.')); return; }
+        const btn = e.currentTarget;
+        btn.setAttribute('aria-busy', 'true');
+        try {
+          await rpc('accept_terms', { p_version: TERMS_VERSION });
+          state.profile.terms_version = TERMS_VERSION;
+          dlg.close(); dlg.remove(); open = false;
+          toast('Thank you.');
+        } catch (ex) { mount(err, errorBox(ex.message)); }
+        finally { btn.removeAttribute('aria-busy'); }
+      } }, 'I agree')));
+  dlg.addEventListener('cancel', (e) => e.preventDefault());
+  document.body.append(dlg);
+  dlg.showModal();
+  agree.focus();
+}
 
 const sec = (title, ...body) => h('section', { class: 'legal-sec' }, h('h2', {}, title), ...body);
 const p = (...t) => h('p', {}, ...t);

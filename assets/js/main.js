@@ -88,11 +88,15 @@ async function render() {
   }
   if (route.path === 'reset') return mount(app, await auth.reset(route));
 
-  if (!isActive()) return mount(app, await auth.waiting(route));
+  if (!isActive()) {
+    mount(app, await auth.waiting(route));
+    return legal.askTerms();
+  }
 
   const entry = findRoute(route);
 
   const holder = h('div', { class: 'stack-lg' }, skeleton(entry.loading));
+  legal.askTerms();
   mount(app, chrome(entry, holder));
   try {
     const content = await entry.view(route);
