@@ -11,7 +11,7 @@ the member gets a receipt.
 
 | Rule | Where |
 |---|---|
-| GH₵20 a month. Month M is due on the 5th of month M+1 (October dues by 5 November). | `group_settings` (changeable in Admin → Settings) |
+| GH₵20 a month. Month M is due on the 5th of month M+1 (November dues by 5 December). Dues start from November 2026. | `group_settings` (changeable in Admin → Settings) |
 | No part payments. One payment can cover several whole months, up to 12 months ahead. | `submit_payment` |
 | A payment is confirmed by **two different admins**, and rejected by **two different admins**. One admin can send it back for correction. A split vote waits for a third admin. | `review_payment` |
 | Nobody reviews their own payment, so the group needs **at least three admins**. | `review_payment` |
@@ -55,7 +55,7 @@ supabase/tests/rules_test.sql   end-to-end test of the rules (rolls itself back)
    were set up directly in the database as active admins with member codes. Every later admin change
    is made from Admin → Members → Manage: one admin proposes, another confirms.
 5. **Before members join:** set the MoMo instructions in Admin → Settings and check the
-   dues start month (currently October 2026).
+   dues start month (November 2026, first due 5 December 2026).
 6. **Share the site link** with the class. Each person registers, sees their member code, and waits for an admin to approve them in Admin → Members. Classmates who can't sign up themselves can be added there by an admin (there's a WhatsApp button to send them their code).
 
 Dues rows are created automatically every day at 08:00 Ghana time (a `pg_cron` job), which also
