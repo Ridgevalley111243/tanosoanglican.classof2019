@@ -1,5 +1,5 @@
 import { sb, state, rpc, friendlyError } from '../api.js';
-import { h, icon, field, toast, mount, form } from '../ui.js';
+import { h, icon, field, toast, mount, form, sheet, copyText } from '../ui.js';
 import { refresh } from '../nav.js';
 import { SCHOOL } from '../config.js';
 
@@ -35,33 +35,64 @@ export function login() {
     h('p', { class: 'auth-switch' }, 'New here? ', h('a', { href: '#/register' }, 'Create your account')));
 }
 
+// Shown once, right after sign-up: the member code the database just created.
+export function showMemberCode(code) {
+  const { close } = sheet(null,
+    h('p', { class: 'small muted' }, 'Welcome to the class dues book'),
+    h('h2', {}, 'This is your member code'),
+    h('p', { class: 'code-big code-reveal' }, code),
+    h('p', { class: 'small' }, 'Keep it — it identifies you on every payment and receipt. You can always find it again under Account.'),
+    h('p', { class: 'small muted' }, 'An admin will now confirm that you’re a member of the class. You’ll see your dues as soon as they do.'),
+    h('div', { class: 'sheet-actions' },
+      h('button', { class: 'btn', type: 'button', onclick: () => copyText(code, 'Code copied') }, icon('copy'), 'Copy'),
+      h('button', { class: 'btn primary', type: 'button', onclick: () => close() }, 'Got it')));
+}
+
+// "+233 24 123 4567", "233241234567" or "0241234567" → "0241234567"
+const normalizePhone = (v) => {
+  const d = String(v || '').replace(/\D/g, '');
+  return /^233\d{9}$/.test(d) ? `0${d.slice(3)}` : d;
+};
+
 export function register() {
-  return frame('Join the dues book', 'You need the member code an admin gave you. It looks like C19-7KQ4M.',
+  const codeField = field('Member code (only if an admin gave you one)',
+    h('input', { class: 'input code', name: 'member_code', autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false', placeholder: 'C19-', maxlength: '9' }));
+  codeField.hidden = true;
+  const showCode = h('button', { class: 'btn ghost small', type: 'button', onclick: (e) => {
+    codeField.hidden = false; e.currentTarget.remove(); codeField.querySelector('input').focus();
+  } }, 'An admin gave me a member code');
+
+  return frame('Join the dues book', 'Create your account. You’ll get your member code as soon as you sign up.',
     form(async (fd, err) => {
       const fullName = fd.get('full_name').trim();
-      const code = fd.get('member_code').trim().toUpperCase();
+      const phone = normalizePhone(fd.get('phone'));
+      const code = (fd.get('member_code') || '').trim().toUpperCase();
       if (fullName.length < 2) throw new Error('Enter your full name.');
-      if (!/^C19-[A-HJ-NP-Z2-9]{5}$/.test(code)) throw new Error('Member codes look like C19-7KQ4M. Check the code and try again.');
+      if (!/^0\d{9}$/.test(phone)) throw new Error('Enter your phone number, e.g. 024 123 4567.');
+      if (code && !/^C19-[A-HJ-NP-Z2-9]{5}$/.test(code)) throw new Error('Member codes look like C19-7KQ4M. Check the code, or leave it empty.');
       if ((fd.get('password') || '').length < 8) throw new Error('Use a password of at least 8 characters.');
 
       const { data, error } = await sb.auth.signUp({
         email: fd.get('email').trim(),
         password: fd.get('password'),
-        options: { emailRedirectTo: siteUrl(), data: { full_name: fullName, member_code: code } },
+        options: { emailRedirectTo: siteUrl(), data: { full_name: fullName, phone, member_code: code || null } },
       });
       if (error) throw new Error(friendlyError(error));
       if (!data.session) {
         mount(err, h('div', { class: 'alert ok' },
-          'Account created. We’ve sent a confirmation link to your email — open it on this phone, then sign in.'));
+          'Account created. We’ve sent a confirmation link to your email — open it on this phone, then sign in to see your member code.'));
         return;
       }
       await refresh('');
+      if (state.member) showMemberCode(state.member.member_code);
     },
     field('Full name', h('input', { class: 'input', name: 'full_name', autocomplete: 'name', required: true, maxlength: '120' }),
-          'As your classmates know you.'),
-    field('Member code', h('input', { class: 'input code', name: 'member_code', autocomplete: 'off', autocapitalize: 'characters', spellcheck: 'false', placeholder: 'C19-', maxlength: '9', required: true })),
+          'As your classmates know you — admins use it to confirm you.'),
+    field('Phone number', h('input', { class: 'input', name: 'phone', type: 'tel', inputmode: 'tel', autocomplete: 'tel', required: true, placeholder: '024 123 4567' }),
+          'The number you use for Mobile Money.'),
     field('Email', email()),
     field('Password', password('new-password'), 'At least 8 characters.'),
+    codeField, showCode,
     h('button', { class: 'btn primary block', type: 'submit' }, 'Create account')),
     h('p', { class: 'auth-switch' }, 'Already registered? ', h('a', { href: '#/' }, 'Sign in')));
 }
@@ -123,8 +154,10 @@ export function waiting() {
   }
   return frame('Waiting for approval', `Hi ${p.full_name}.`,
     h('div', { class: 'stack' },
-      h('p', {}, 'You’re linked to ', h('b', {}, state.member.full_name), ' (', h('span', { class: 'mono' }, state.member.member_code),
-        '). An admin will confirm you shortly — then you’ll see your dues here.'),
+      h('div', { class: 'code-box' }, h('p', { class: 'small muted' }, 'Your member code'),
+        h('p', { class: 'code-big' }, state.member.member_code),
+        h('button', { class: 'btn ghost small', type: 'button', onclick: () => copyText(state.member.member_code, 'Code copied') }, icon('copy'), 'Copy')),
+      h('p', {}, 'An admin will confirm that you’re a member of the class — then you’ll see your dues here.'),
       h('button', { class: 'btn primary block', type: 'button', onclick: (e) => { e.currentTarget.setAttribute('aria-busy', 'true'); refresh(''); } }, 'Check again'),
       signOut()));
 }

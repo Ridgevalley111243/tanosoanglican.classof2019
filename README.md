@@ -16,7 +16,7 @@ the member gets a receipt.
 | A payment is confirmed by **two different admins**, and rejected by **two different admins**. One admin can send it back for correction. A split vote waits for a third admin. | `review_payment` |
 | Nobody reviews their own payment, so the group needs **at least three admins**. | `review_payment` |
 | Expenses need two approvals from admins **other than the one who recorded it**. | `review_expense` |
-| Members are identified by a member code (e.g. `C19-7KQ4M`) that an admin issues. New accounts wait for an admin's approval. | `handle_new_user`, `admin_set_account_status` |
+| Members register themselves and get a member code (e.g. `C19-7KQ4M`) straight away. Their account waits for an admin's approval and owes nothing until then. Admins can also add classmates and hand out codes. | `handle_new_user`, `admin_set_account_status` |
 | Late joiners owe every month since the dues start month. | `ensure_dues` |
 | Only confirmed payments count as collections; only approved expenses reduce the balance. | `finance_summary` |
 | Giving or removing admin rights takes two admins: one proposes, another confirms within 7 days. | `admin_change_role` |
@@ -56,7 +56,7 @@ supabase/tests/rules_test.sql   end-to-end test of the rules (rolls itself back)
    is made from Admin → Members → Manage: one admin proposes, another confirms.
 5. **Before members join:** set the MoMo instructions in Admin → Settings and check the
    dues start month (currently October 2026).
-6. **Add the class list** in Admin → Members. Each person gets a code to share (there's a WhatsApp button).
+6. **Share the site link** with the class. Each person registers, sees their member code, and waits for an admin to approve them in Admin → Members. Classmates who can't sign up themselves can be added there by an admin (there's a WhatsApp button to send them their code).
 
 Dues rows are created automatically every day at 08:00 Ghana time (a `pg_cron` job), which also
 sends in-app reminders 5 days before the due date, on it, and when dues are 3+ days overdue.

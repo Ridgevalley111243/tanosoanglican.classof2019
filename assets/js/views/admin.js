@@ -239,15 +239,18 @@ export async function members() {
       h('div', { class: 'spread' },
         h('div', {}, h('p', { class: 'item-title' }, p.full_name), h('p', { class: 'small muted' }, `${p.email || ''} · signed up ${relative(p.created_at)}`)),
         chip('pending', 'Waiting')),
-      m ? h('p', { class: `small ${nameMatch ? '' : 'alert warn'}` }, 'Used code ', h('span', { class: 'mono' }, m.member_code), ` for “${m.full_name}”.`,
-            nameMatch ? '' : ' The names differ — make sure this is the right person.')
-        : h('p', { class: 'small alert warn' }, 'No member code linked yet — they can’t be approved until they enter one.'),
+      !m ? h('p', { class: 'small alert warn' }, 'No member code linked yet — they can’t be approved until they enter one.')
+        : m.self_registered ? h('p', { class: 'small' }, 'Registered themselves · code ', h('span', { class: 'mono' }, m.member_code),
+            m.phone ? [' · phone ', h('span', { class: 'mono' }, m.phone)] : null,
+            h('br'), h('span', { class: 'muted' }, 'Approve only if you know this is a classmate.'))
+        : h('p', { class: `small ${nameMatch ? '' : 'alert warn'}` }, 'Used code ', h('span', { class: 'mono' }, m.member_code), ` for “${m.full_name}”.`,
+            nameMatch ? '' : ' The names differ — make sure this is the right person.'),
       h('div', { class: 'row wrap' },
         h('button', { class: 'btn primary small', type: 'button', disabled: !m, onclick: (e) => busy(e.currentTarget, async () => {
           await write('admin_set_account_status', { p_profile: p.id, p_status: 'active' });
           toast(`${p.full_name} approved.`); refreshMembers();
         }) }, icon('check'), 'Approve'),
-        m ? h('button', { class: 'btn small', type: 'button', onclick: (e) => busy(e.currentTarget, async () => {
+        m && !m.self_registered ? h('button', { class: 'btn small', type: 'button', onclick: (e) => busy(e.currentTarget, async () => {
           if (!await ask({ title: 'Unlink this code?', body: `${m.member_code} becomes free again for the right person to use.`, confirm: 'Unlink' })) return;
           await write('admin_release_member_code', { p_member: m.id });
           toast('Code released.'); refreshMembers();
@@ -268,7 +271,7 @@ export async function members() {
       const p = m.profile_id ? people.get(m.profile_id) : null;
       const o = owing.get(m.id);
       return h('tr', {},
-        h('td', {}, h('b', {}, m.full_name), m.is_active ? '' : h('span', { class: 'muted small' }, ' (left)'),
+        h('td', {}, h('b', {}, m.full_name), m.is_active ? '' : h('span', { class: 'muted small' }, m.self_registered && p?.account_status === 'pending' ? ' (waiting for approval)' : ' (left)'),
           h('div', { class: 'tiny muted' }, m.phone || '')),
         h('td', { class: 'mono nowrap' }, m.member_code),
         h('td', {}, p ? h('span', { class: 'row wrap' }, chip(...ACCOUNT[p.account_status]), p.is_admin ? chip('admin', 'Admin') : null)
@@ -301,7 +304,8 @@ export async function members() {
           h('p', { class: 'small muted' }, p.account_status === 'active' ? p.email || '' : 'Account blocked — remove admin rights to finish')),
         p.id === me ? null : roleButton(p, proposalFor.get(p.id), me, people, refreshMembers))))),
     h('section', { class: 'card' }, h('div', { class: 'card-head' }, h('h2', {}, 'Sign-ups waiting'), h('span', { class: 'muted' }, `${pending.length}`)), pendingList),
-    h('section', { class: 'card' }, h('div', { class: 'card-head' }, h('h2', {}, 'Add a member')), addForm),
+    h('section', { class: 'card' }, h('div', { class: 'card-head' }, h('h2', {}, 'Add a member yourself'),
+      h('span', { class: 'muted' }, 'for classmates who can’t sign up on their own')), addForm),
     h('section', { class: 'card' },
       h('div', { class: 'card-head' }, h('h2', {}, 'Class list'), h('span', { class: 'muted' }, `${roster.filter((m) => m.is_active).length} active`)),
       search,
