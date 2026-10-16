@@ -153,6 +153,8 @@ const routes = (process.argv[4] || 'home').split(',').filter(Boolean);
 for (const r of routes) {
   await page.goto(`${BASE}#/${r === "home" ? "" : r}`);
   await page.waitForTimeout(SLOW ? 500 : 900);
+  // CLICK=<css selector> taps something before the screenshot (e.g. a network tile).
+  if (process.env.CLICK) { await page.click(process.env.CLICK); await page.waitForTimeout(400); }
   const name = `${process.env.WIDTH ? `w${process.env.WIDTH}-` : ''}${who}-${(r || 'home').replace(/[/?=]/g, '_')}`;
   await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true });
   console.log('shot', name);

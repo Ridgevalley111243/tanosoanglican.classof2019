@@ -6,6 +6,7 @@ import { GROUP_SHORT, SCHOOL } from './config.js';
 import * as auth from './views/auth.js';
 import * as member from './views/member.js';
 import * as admin from './views/admin.js';
+import * as legal from './views/legal.js';
 
 const app = document.getElementById('app');
 
@@ -65,7 +66,8 @@ function chrome(entry, content) {
           h('a', { class: 'btn ghost icon-btn', href: '#/notices', title: 'Notices', 'aria-label': 'Notices' }, icon('bell')),
           h('a', { class: 'btn ghost icon-btn', href: '#/account', title: p?.full_name || 'Account', 'aria-label': 'Your account' }, icon('users')))),
       h('main', { id: 'main' }, content),
-      h('p', { class: 'footer-note' }, 'Payments count only after two admins confirm them against the MoMo statement.')),
+      h('p', { class: 'footer-note' }, 'Payments count only after two admins confirm them against the MoMo statement.',
+        h('br'), h('a', { href: '#/terms' }, 'Terms'), ' · ', h('a', { href: '#/privacy' }, 'Privacy'))),
     h('nav', { class: 'tabbar', 'aria-label': 'Main' }, links()),
   ];
 }
@@ -75,6 +77,9 @@ async function render() {
   const seq = ++renderSeq;
   const route = parseHash();
   window.scrollTo(0, 0);
+
+  // Terms and privacy are readable by anyone, signed in or not.
+  if (route.path === 'terms' || route.path === 'privacy') return mount(app, legal[route.path]());
 
   // Auth screens work without a session.
   if (!state.session) {

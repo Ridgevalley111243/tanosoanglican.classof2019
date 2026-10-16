@@ -151,10 +151,14 @@ export async function pay(route) {
   update();
 
   const f = fixing || {};
-  const networkPick = h('div', { class: 'segmented', role: 'radiogroup', 'aria-label': 'MoMo network' },
-    Object.entries(NETWORKS).map(([k, v]) => h('label', {},
-      h('input', { type: 'radio', name: 'network', value: k, checked: (f.network || 'mtn') === k }),
-      h('span', {}, v.short), h('small', {}, v.name))));
+  let detailsCard;
+  // Logo tiles. Picking one recolours the whole step 3 card in that network's colours.
+  const networkPick = h('div', { class: 'networks', role: 'radiogroup', 'aria-label': 'MoMo network' },
+    Object.entries(NETWORKS).map(([k, v]) => h('label', { class: `net-tile net-${k}` },
+      h('input', { type: 'radio', name: 'network', value: k, checked: (f.network || 'mtn') === k,
+        onchange: () => { detailsCard.dataset.network = k; } }),
+      h('img', { src: `assets/networks/${k}.png`, alt: v.name }),
+      h('span', { class: 'net-name' }, v.name))));
 
   const formEl = form(submit,
     h('section', { class: 'card' },
@@ -168,7 +172,7 @@ export async function pay(route) {
         ? h('p', { class: 'pre' }, s.momo_instructions)
         : h('p', { class: 'muted' }, 'Ask an admin for the MoMo number to send to.')),
 
-    h('section', { class: 'card' },
+    detailsCard = h('section', { class: 'card net-card', dataset: { network: f.network || 'mtn' } },
       h('div', { class: 'card-head' }, h('h2', {}, '3. Details from your MoMo message')),
       h('div', { class: 'stack' },
         field('Network', networkPick),

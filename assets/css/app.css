@@ -466,3 +466,53 @@ dialog.sheet p + p { margin-top: 8px; }
   .shell.wide { max-width: 1120px; }
   .brand-text b, .brand-text span { white-space: nowrap; }
 }
+
+/* ---------- MoMo network picker (step 3 of Record a payment) ---------- */
+.networks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.net-tile {
+  position: relative; display: grid; justify-items: center; align-content: center; gap: 6px;
+  min-height: 104px; padding: 10px 6px 8px; border-radius: 16px; cursor: pointer;
+  background: #fff; border: 2px solid var(--line-strong);
+  transition: border-color .15s ease, box-shadow .15s ease, transform .1s ease;
+}
+.net-tile input { position: absolute; opacity: 0; pointer-events: none; }
+.net-tile img { height: 52px; width: 100%; object-fit: contain; }
+.net-tile .net-name { font-size: .76rem; font-weight: 600; color: var(--ink-2); }
+.net-mtn { background: #ffcb05; border-color: #e6b600; }
+.net-mtn .net-name { color: #3d3000; }
+.net-tile:has(input:checked) { transform: translateY(-1px); }
+.net-tile:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 3px; }
+.net-mtn:has(input:checked) { border-color: #000; box-shadow: 0 0 0 3px rgba(0,0,0,.18); }
+.net-telecel:has(input:checked) { border-color: #e30613; box-shadow: 0 0 0 3px rgba(227,6,19,.2); }
+.net-airteltigo:has(input:checked) { border-color: #e4002b; box-shadow: 0 0 0 3px rgba(31,54,128,.22); }
+.net-tile:has(input:checked)::after {
+  content: "✓"; position: absolute; top: 6px; right: 8px; width: 20px; height: 20px; border-radius: 50%;
+  display: grid; place-items: center; font-size: .72rem; font-weight: 700; color: #fff; background: var(--ink);
+}
+
+/* The whole details card takes on the chosen network's colours. */
+.net-card { transition: background-color .25s ease, border-color .25s ease; border-width: 1px; }
+.net-card[data-network="mtn"] { background: linear-gradient(180deg, rgba(255,203,5,.34), rgba(255,236,150,.22)); border-color: rgba(230,182,0,.75); }
+.net-card[data-network="telecel"] { background: linear-gradient(180deg, rgba(227,6,19,.13), rgba(227,6,19,.05)); border-color: rgba(227,6,19,.45); }
+.net-card[data-network="airteltigo"] { background: linear-gradient(180deg, rgba(31,54,128,.13), rgba(228,0,43,.06)); border-color: rgba(31,54,128,.4); }
+.net-card[data-network="mtn"] .input:focus { border-color: #b38f00; box-shadow: 0 0 0 3px rgba(255,203,5,.45); }
+.net-card[data-network="telecel"] .input:focus { border-color: #e30613; box-shadow: 0 0 0 3px rgba(227,6,19,.2); }
+.net-card[data-network="airteltigo"] .input:focus { border-color: #1f3680; box-shadow: 0 0 0 3px rgba(31,54,128,.2); }
+.net-card[data-network="mtn"] .check input { accent-color: #1a1a1a; }
+.net-card[data-network="telecel"] .check input { accent-color: #e30613; }
+.net-card[data-network="airteltigo"] .check input { accent-color: #1f3680; }
+@media (max-width: 360px) { .net-tile { min-height: 92px; } .net-tile img { height: 42px; } }
+
+/* ---------- terms and privacy ---------- */
+.legal-page { max-width: 760px; margin: 0 auto; padding: 16px 16px 48px; position: relative; z-index: 1; }
+.legal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.legal { padding: 24px 22px; }
+.legal h1 { font-family: var(--serif); font-weight: 400; font-size: 2.2rem; }
+.legal > p { margin-top: 10px; }
+.legal-sec { margin-top: 22px; }
+.legal-sec h2 { font-size: 1.05rem; margin-bottom: 8px; }
+.legal-sec ul { margin: 0; padding-left: 20px; }
+.legal-sec li + li { margin-top: 6px; }
+.legal-sec p, .legal-sec li { color: var(--ink-2); }
+.legal-foot { margin-top: 26px; padding-top: 14px; border-top: 1px solid var(--line); font-size: .9rem; }
+.footer-note a { color: var(--muted); }

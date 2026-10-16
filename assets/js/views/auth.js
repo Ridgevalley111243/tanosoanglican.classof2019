@@ -13,7 +13,8 @@ function frame(title, lead, ...body) {
         h('img', { class: 'brand-logo auth-logo', src: 'assets/logo.png', alt: 'Tanoso Anglican J.H.S crest', width: '56', height: '56' }),
         h('div', { class: 'brand-text' }, h('b', {}, 'Class of 2019'), h('span', {}, SCHOOL))),
       h('div', { class: 'auth-title' }, h('h1', {}, title), lead ? h('p', {}, lead) : null),
-      h('div', { class: 'card' }, ...body)));
+      h('div', { class: 'card' }, ...body),
+      h('p', { class: 'footer-note' }, h('a', { href: '#/terms' }, 'Terms'), ' · ', h('a', { href: '#/privacy' }, 'Privacy'))));
 }
 
 
@@ -71,11 +72,12 @@ export function register() {
       if (!/^0\d{9}$/.test(phone)) throw new Error('Enter your phone number, e.g. 024 123 4567.');
       if (code && !/^C19-[A-HJ-NP-Z2-9]{5}$/.test(code)) throw new Error('Member codes look like C19-7KQ4M. Check the code, or leave it empty.');
       if ((fd.get('password') || '').length < 8) throw new Error('Use a password of at least 8 characters.');
+      if (!fd.get('agree')) throw new Error('Please read and accept the terms and privacy policy.');
 
       const { data, error } = await sb.auth.signUp({
         email: fd.get('email').trim(),
         password: fd.get('password'),
-        options: { emailRedirectTo: siteUrl(), data: { full_name: fullName, phone, member_code: code || null } },
+        options: { emailRedirectTo: siteUrl(), data: { full_name: fullName, phone, member_code: code || null, terms_accepted_at: new Date().toISOString() } },
       });
       if (error) throw new Error(friendlyError(error));
       if (!data.session) {
@@ -93,6 +95,10 @@ export function register() {
     field('Email', email()),
     field('Password', password('new-password'), 'At least 8 characters.'),
     codeField, showCode,
+    h('label', { class: 'check' }, h('input', { type: 'checkbox', name: 'agree', required: true }),
+      // New tab, so reading them doesn't lose what's typed in the form.
+      h('span', {}, 'I agree to the ', h('a', { href: '#/terms', target: '_blank', rel: 'noopener' }, 'terms and conditions'), ' and ',
+        h('a', { href: '#/privacy', target: '_blank', rel: 'noopener' }, 'privacy policy'), '.')),
     h('button', { class: 'btn primary block', type: 'submit' }, 'Create account')),
     h('p', { class: 'auth-switch' }, 'Already registered? ', h('a', { href: '#/' }, 'Sign in')));
 }
