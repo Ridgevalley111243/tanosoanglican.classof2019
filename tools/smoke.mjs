@@ -108,7 +108,7 @@ function filter(rows, params) {
 const fakeJwt = (sub) => ['eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9', Buffer.from(JSON.stringify({ sub, role: 'authenticated', exp: 4102444800, aud: 'authenticated' })).toString('base64url'), 'sig'].join('.');
 
 const browser = await chromium.launch();
-const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, timezoneId: 'Africa/Accra' });
+const ctx = await browser.newContext({ viewport: { width: Number(process.env.WIDTH) || 390, height: 844 }, deviceScaleFactor: 2, timezoneId: 'Africa/Accra' });
 await ctx.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.fulfill({ status: 200, contentType: 'text/css', body: '' }));
 // SLOW=1 holds every backend reply for 3 s so the loading skeletons can be screenshotted.
 const SLOW = process.env.SLOW === '1';
@@ -153,7 +153,7 @@ const routes = (process.argv[4] || 'home').split(',').filter(Boolean);
 for (const r of routes) {
   await page.goto(`${BASE}#/${r === "home" ? "" : r}`);
   await page.waitForTimeout(SLOW ? 500 : 900);
-  const name = `${who}-${(r || 'home').replace(/[/?=]/g, '_')}`;
+  const name = `${process.env.WIDTH ? `w${process.env.WIDTH}-` : ''}${who}-${(r || 'home').replace(/[/?=]/g, '_')}`;
   await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true });
   console.log('shot', name);
 }

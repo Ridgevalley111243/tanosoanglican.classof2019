@@ -49,22 +49,24 @@ function chrome(entry, content) {
   if (isAdmin()) tabs.push(['admin', 'shield', 'Admin']);
   else tabs.push(['account', 'users', 'Account']);
   const current = entry.admin ? 'admin' : entry.tab;
+  const links = () => tabs.map(([path, ic, label]) => h('a', {
+    href: `#/${path}`, 'aria-current': current === path ? 'page' : null,
+  }, icon(ic), label));
 
   return [
     h('div', { class: `shell ${entry.admin ? 'wide' : ''}` },
       h('header', { class: 'topbar' },
         h('a', { class: 'brand', href: '#/' },
-          h('span', { class: 'brand-mark', 'aria-hidden': 'true' }, '19'),
+          h('img', { class: 'brand-logo', src: 'assets/logo.png', alt: '', width: '40', height: '40' }),
           h('span', { class: 'brand-text' }, h('b', {}, `${GROUP_SHORT} Dues`), h('span', {}, SCHOOL))),
+        // On wide screens the main links sit here; on phones they're the bottom tab bar.
+        h('nav', { class: 'topnav', 'aria-label': 'Main' }, links()),
         h('div', { class: 'row' },
           h('a', { class: 'btn ghost icon-btn', href: '#/notices', title: 'Notices', 'aria-label': 'Notices' }, icon('bell')),
           h('a', { class: 'btn ghost icon-btn', href: '#/account', title: p?.full_name || 'Account', 'aria-label': 'Your account' }, icon('users')))),
       h('main', { id: 'main' }, content),
       h('p', { class: 'footer-note' }, 'Payments count only after two admins confirm them against the MoMo statement.')),
-    h('nav', { class: 'tabbar', 'aria-label': 'Main' },
-      tabs.map(([path, ic, label]) => h('a', {
-        href: `#/${path}`, 'aria-current': current === path ? 'page' : null,
-      }, icon(ic), label))),
+    h('nav', { class: 'tabbar', 'aria-label': 'Main' }, links()),
   ];
 }
 
@@ -85,7 +87,7 @@ async function render() {
 
   const entry = findRoute(route);
 
-  const holder = h('div', {}, skeleton(entry.loading));
+  const holder = h('div', { class: 'stack-lg' }, skeleton(entry.loading));
   mount(app, chrome(entry, holder));
   try {
     const content = await entry.view(route);

@@ -10,7 +10,7 @@ function frame(title, lead, ...body) {
     h('div', { class: 'auth-watermark', 'aria-hidden': 'true' }, '2019'),
     h('div', { class: 'auth-card' },
       h('div', { class: 'row' },
-        h('span', { class: 'brand-mark', 'aria-hidden': 'true' }, '19'),
+        h('img', { class: 'brand-logo auth-logo', src: 'assets/logo.png', alt: 'Tanoso Anglican J.H.S crest', width: '56', height: '56' }),
         h('div', { class: 'brand-text' }, h('b', {}, 'Class of 2019'), h('span', {}, SCHOOL))),
       h('div', { class: 'auth-title' }, h('h1', {}, title), lead ? h('p', {}, lead) : null),
       h('div', { class: 'card' }, ...body)));

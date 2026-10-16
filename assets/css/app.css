@@ -113,13 +113,6 @@ p { margin: 0; }
   padding: 8px 8px 8px 14px; border-radius: 16px; margin-bottom: 18px;
 }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); min-width: 0; }
-.brand-mark {
-  flex: none; width: 34px; height: 34px; border-radius: 10px;
-  display: grid; place-items: center;
-  background: linear-gradient(160deg, var(--blue-2), var(--blue));
-  color: #fff; font-family: var(--serif); font-style: italic; font-size: 1.15rem;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.35);
-}
 .brand-text { min-width: 0; }
 .brand-text b { display: block; font-size: .95rem; font-weight: 600; line-height: 1.1; }
 .brand-text span { display: block; font-size: .74rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -376,7 +369,7 @@ details.table-view summary { cursor: pointer; font-size: .85rem; color: var(--bl
 .receipt-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; border-bottom: 2px solid var(--ink); padding-bottom: 14px; margin-bottom: 16px; }
 .receipt-head h1 { font-family: var(--serif); font-weight: 400; font-size: 1.9rem; }
 .receipt .stamp {
-  position: absolute; right: 18px; top: 92px; transform: rotate(-9deg);
+  position: absolute; right: 18px; top: 128px; transform: rotate(-9deg);
   border: 2px solid var(--paid); color: var(--paid); border-radius: 8px; padding: 4px 10px;
   font-weight: 700; letter-spacing: .12em; font-size: .85rem; opacity: .85;
 }
@@ -441,3 +434,35 @@ a.notice { text-decoration: none; color: inherit; }
 .code-reveal { text-align: center; margin: 14px 0; padding: 14px; border-radius: 14px; background: var(--blue-wash); }
 [hidden] { display: none !important; }
 dialog.sheet p + p { margin-top: 8px; }
+
+/* ---------- crest ---------- */
+.brand-logo { flex: none; width: 40px; height: 40px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(14,47,138,.18)); }
+.auth-logo { width: 56px; height: 56px; }
+.receipt-logo { width: 52px; height: 52px; object-fit: contain; flex: none; }
+@media print { .receipt-logo { filter: none; } }
+
+/* ---------- navigation: bottom tabs on phones, top links on wide screens ---------- */
+.topnav { display: none; }
+@media (min-width: 900px) {
+  .tabbar { display: none; }
+  .shell { padding-bottom: 40px; }
+  .topnav { display: flex; gap: 4px; margin-left: auto; }
+  .topnav a {
+    display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 11px;
+    text-decoration: none; color: var(--ink-2); font-size: .92rem; font-weight: 500;
+  }
+  .topnav a svg { width: 18px; height: 18px; }
+  .topnav a:hover { background: rgba(13,27,51,.05); }
+  .topnav a[aria-current="page"] { background: rgba(24,70,196,.1); color: var(--blue); }
+}
+
+/* ---------- stat tiles fill the row and keep amounts on one line ---------- */
+.stats { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+@media (min-width: 760px) { .stats { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); } }
+.stat .value { font-size: 1.3rem; white-space: nowrap; overflow-wrap: normal; }
+@media (max-width: 380px) { .stat .value { font-size: 1.12rem; } }
+@media (min-width: 900px) {
+  .shell { max-width: 980px; }
+  .shell.wide { max-width: 1120px; }
+  .brand-text b, .brand-text span { white-space: nowrap; }
+}
