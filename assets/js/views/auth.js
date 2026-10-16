@@ -1,5 +1,5 @@
 import { sb, state, rpc, friendlyError } from '../api.js';
-import { h, icon, field, errorBox, toast, mount } from '../ui.js';
+import { h, icon, field, toast, mount, form } from '../ui.js';
 import { refresh } from '../nav.js';
 import { SCHOOL } from '../config.js';
 
@@ -16,22 +16,6 @@ function frame(title, lead, ...body) {
       h('div', { class: 'card' }, ...body)));
 }
 
-// Wraps a form so errors show inline and the button can't double-submit.
-function form(onSubmit, ...children) {
-  const err = h('div');
-  const el = h('form', { class: 'stack', novalidate: true }, err, ...children);
-  el.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = el.querySelector('button[type=submit]');
-    if (btn.getAttribute('aria-busy') === 'true') return;
-    mount(err);
-    btn.setAttribute('aria-busy', 'true');
-    try { await onSubmit(new FormData(el), err); }
-    catch (ex) { mount(err, errorBox(ex.message || friendlyError(ex))); }
-    finally { btn.removeAttribute('aria-busy'); }
-  });
-  return el;
-}
 
 const email = () => h('input', { class: 'input', type: 'email', name: 'email', autocomplete: 'email', required: true, inputmode: 'email' });
 const password = (auto = 'current-password') =>
@@ -57,7 +41,7 @@ export function register() {
       const fullName = fd.get('full_name').trim();
       const code = fd.get('member_code').trim().toUpperCase();
       if (fullName.length < 2) throw new Error('Enter your full name.');
-      if (!/^C19-[A-Z0-9]{5}$/.test(code)) throw new Error('Member codes look like C19-7KQ4M. Check the code and try again.');
+      if (!/^C19-[A-HJ-NP-Z2-9]{5}$/.test(code)) throw new Error('Member codes look like C19-7KQ4M. Check the code and try again.');
       if ((fd.get('password') || '').length < 8) throw new Error('Use a password of at least 8 characters.');
 
       const { data, error } = await sb.auth.signUp({

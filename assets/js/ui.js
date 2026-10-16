@@ -34,7 +34,7 @@ const SVG = 'http://www.w3.org/2000/svg';
 export function s(tag, attrs, ...children) {
   const el = document.createElementNS(SVG, tag);
   for (const [k, v] of Object.entries(attrs || {})) if (v != null) el.setAttribute(k, v);
-  for (const c of children.flat()) if (c != null) el.append(c instanceof Node ? c : document.createTextNode(String(c)));
+  append(el, children);
   return el;
 }
 
@@ -48,7 +48,6 @@ const PATHS = {
   check: 'M5 12.5 10 17.5 19 7',
   x: 'M6 6l12 12M18 6 6 18',
   back: 'M14.5 5.5 8 12l6.5 6.5',
-  next: 'M9.5 5.5 16 12l-6.5 6.5',
   copy: 'M8.5 8.5h10v11h-10zM5.5 15.5v-11h10',
   print: 'M7 9V4h10v5M7 17H4.5v-7h15v7H17M7 14h10v6H7z',
   download: 'M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14',
@@ -58,12 +57,8 @@ const PATHS = {
   clock: 'M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM12 8v4.5l3 1.5',
   users: 'M9 11.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 19.5c.6-3.2 3-5 6-5s5.4 1.8 6 5M16 5a3.2 3.2 0 0 1 0 6.3M18 14.6c1.6.7 2.6 2.2 3 4.9',
   receipt: 'M6 3.5h12v17l-2.5-1.5-2 1.5-1.5-1.2-1.5 1.2-2-1.5L6 20.5zM9 8h6M9 11.5h6M9 15h3.5',
-  cog: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 13.5l1.6 1.2-2 3.4-1.9-.7a7 7 0 0 1-1.7 1l-.3 2.1h-4l-.3-2.1a7 7 0 0 1-1.7-1l-1.9.7-2-3.4 1.6-1.2a7 7 0 0 1 0-3l-1.6-1.2 2-3.4 1.9.7a7 7 0 0 1 1.7-1l.3-2.1h4l.3 2.1a7 7 0 0 1 1.7 1l1.9-.7 2 3.4-1.6 1.2a7 7 0 0 1 0 3z',
-  chart: 'M4 20h16M7 16.5V11M12 16.5V6.5M17 16.5v-4',
   wallet: 'M4 7.5h14.5a1.5 1.5 0 0 1 1.5 1.5v9.5a1.5 1.5 0 0 1-1.5 1.5H5.5A1.5 1.5 0 0 1 4 18.5V6a1.5 1.5 0 0 1 1.5-1.5H17M16 13.8h.5',
   book: 'M5 4.5h10.5a3 3 0 0 1 3 3v12H8a3 3 0 0 1-3-3zM5 16.5a3 3 0 0 1 3-3h10.5',
-  phone: 'M8 3.5h8v17H8zM11 17.5h2',
-  link: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1',
 };
 
 export function icon(name, attrs = {}) {
@@ -75,26 +70,37 @@ export function icon(name, attrs = {}) {
 // ---------- formatting (always Ghana time) ----------
 const cedisFmt = new Intl.NumberFormat('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 export const cedis = (n) => `GH₵${cedisFmt.format(Number(n || 0))}`;
+// The big hero number: whole cedis without decimals, otherwise two places.
+export const cedisFigure = (n) => {
+  const v = Number(n || 0);
+  return Number.isInteger(v) ? v.toLocaleString('en-GH') : cedisFmt.format(v);
+};
 export const cedisShort = (n) => {
   const v = Number(n || 0);
   return Number.isInteger(v) ? `GH₵${v.toLocaleString('en-GH')}` : cedis(v);
 };
 
-// Postgres dates arrive as 'YYYY-MM-DD'. Treat them as calendar dates, not instants.
-const asDate = (d) => (d instanceof Date ? d : String(d).length === 10 ? new Date(`${d}T12:00:00Z`) : new Date(d));
-const fmt = (opts) => new Intl.DateTimeFormat('en-GB', { timeZone: TIME_ZONE, ...opts });
-export const monthLabel = (d) => fmt({ month: 'long', year: 'numeric' }).format(asDate(d));
-export const monthShort = (d) => fmt({ month: 'short' }).format(asDate(d));
-export const monthShortYear = (d) => fmt({ month: 'short', year: '2-digit' }).format(asDate(d)).replace(' ', ' ’');
-export const dayLabel = (d) => fmt({ weekday: 'short', day: 'numeric', month: 'short' }).format(asDate(d));
-export const dateLabel = (d) => fmt({ day: 'numeric', month: 'short', year: 'numeric' }).format(asDate(d));
-export const dateTimeLabel = (ts) => fmt({ day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(ts));
+// Formatters are built once; making them is the slow part on cheap phones.
+// Calendar dates ('YYYY-MM-DD' from Postgres) are formatted in UTC so they never
+// shift a day; timestamps are formatted in Ghana time.
+const fmt = (opts, timeZone = TIME_ZONE) => {
+  const f = new Intl.DateTimeFormat('en-GB', { timeZone, ...opts });
+  return (v) => f.format(new Date(v));
+};
+const calendar = (opts) => fmt(opts, 'UTC');
+export const monthLabel = calendar({ month: 'long', year: 'numeric' });
+export const monthShort = calendar({ month: 'short' });
+const monthShortYearFmt = calendar({ month: 'short', year: '2-digit' });
+export const monthShortYear = (d) => monthShortYearFmt(d).replace(' ', ' ’');
+export const dayLabel = calendar({ weekday: 'short', day: 'numeric', month: 'short' });
+export const dateLabel = calendar({ day: 'numeric', month: 'short', year: 'numeric' });
+export const dateTimeLabel = fmt({ day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
 export const timeLabel = (t) => (t || '').slice(0, 5);
 
-export function todayAccra() {
-  // en-CA formats as YYYY-MM-DD
-  return new Intl.DateTimeFormat('en-CA', { timeZone: TIME_ZONE }).format(new Date());
-}
+// YYYY-MM-DD in Ghana time (en-CA formats dates that way).
+const isoFmt = new Intl.DateTimeFormat('en-CA', { timeZone: TIME_ZONE });
+export const isoDateAccra = (ts = new Date()) => isoFmt.format(new Date(ts));
+export const todayAccra = () => isoDateAccra();
 export function nowTimeAccra() {
   return new Intl.DateTimeFormat('en-GB', { timeZone: TIME_ZONE, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date());
 }
@@ -113,13 +119,19 @@ export function relative(ts) {
   if (hrs < 24) return `${hrs} h ago`;
   const days = Math.round(hrs / 24);
   if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
-  return dateLabel(ts);
+  return dateLabel(isoDateAccra(ts));
 }
 
 export function greeting() {
   const hr = Number(new Intl.DateTimeFormat('en-GB', { timeZone: TIME_ZONE, hour: 'numeric', hour12: false }).format(new Date()));
   return hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
 }
+
+export const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+export const firstName = (name) => String(name || '').trim().split(/\s+/)[0];
+
+// Dues states that still need paying.
+export const OWING_STATES = ['overdue', 'open'];
 
 export const NETWORKS = {
   mtn: { name: 'MTN MoMo', short: 'MTN' },
@@ -153,6 +165,9 @@ export async function busy(button, fn) {
   finally { button?.removeAttribute('aria-busy'); }
 }
 
+export const stat = (label, value, note) => h('div', { class: 'glass stat' },
+  h('p', { class: 'label' }, label), h('p', { class: 'value num' }, value), note ? h('p', { class: 'note' }, note) : null);
+
 export function errorBox(message) {
   return h('div', { class: 'alert error', role: 'alert' }, message);
 }
@@ -161,14 +176,24 @@ export function empty(text, iconName = 'book') {
   return h('div', { class: 'empty' }, icon(iconName), text);
 }
 
-// A small modal. Resolves to the note text (or true) when confirmed, null when cancelled.
+// Opens a modal sheet. close() removes it; Escape closes it too.
+export function sheet(onClose, ...children) {
+  const dlg = h('dialog', { class: 'sheet' }, ...children);
+  const close = (v) => { dlg.close(); dlg.remove(); onClose?.(v); };
+  dlg.addEventListener('cancel', (e) => { e.preventDefault(); close(null); });
+  document.body.append(dlg);
+  dlg.showModal();
+  return { dlg, close };
+}
+
+// A small confirm dialog. Resolves to the note text (or true) when confirmed, null when cancelled.
 export function ask({ title, body, confirm = 'Confirm', danger = false, note = null }) {
   return new Promise((resolve) => {
     const textarea = note ? h('textarea', { class: 'input', placeholder: note.placeholder || '', maxlength: '500' }) : null;
     const err = h('div');
-    const dlg = h('dialog', { class: 'sheet' },
+    const { dlg, close } = sheet(resolve,
       h('h2', {}, title),
-      body ? h('p', { class: 'muted small', style: null }, body) : null,
+      body ? h('p', { class: 'muted small sheet-body' }, body) : null,
       textarea ? h('label', { class: 'field' }, h('span', {}, note.label), textarea) : null,
       err,
       h('div', { class: 'sheet-actions' },
@@ -181,13 +206,26 @@ export function ask({ title, body, confirm = 'Confirm', danger = false, note = n
           }
           close(textarea ? textarea.value.trim() : true);
         } }, confirm)));
-    if (body) dlg.querySelector('p').style.marginTop = '8px';
-    const close = (v) => { dlg.close(); dlg.remove(); resolve(v); };
-    dlg.addEventListener('cancel', (e) => { e.preventDefault(); close(null); });
-    document.body.append(dlg);
-    dlg.showModal();
     (textarea || dlg.querySelector('.btn.primary, .btn.danger')).focus();
   });
+}
+
+// A form whose submit handler may throw: the message shows at the top of the
+// form, and the submit button can't be pressed twice.
+export function form(onSubmit, ...children) {
+  const err = h('div');
+  const el = h('form', { class: 'stack', novalidate: true }, err, ...children);
+  el.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = el.querySelector('button[type=submit]');
+    if (btn.getAttribute('aria-busy') === 'true') return;
+    mount(err);
+    btn.setAttribute('aria-busy', 'true');
+    try { await onSubmit(new FormData(el), err); }
+    catch (ex) { mount(err, errorBox(ex.message || 'Something went wrong.')); err.scrollIntoView({ block: 'center' }); }
+    finally { btn.removeAttribute('aria-busy'); }
+  });
+  return el;
 }
 
 export async function copyText(text, label = 'Copied') {

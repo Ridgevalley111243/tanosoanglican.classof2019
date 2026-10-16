@@ -51,7 +51,6 @@ body {
     radial-gradient(90rem 50rem at -10% -20%, #ffffff 0%, rgba(255,255,255,0) 60%),
     radial-gradient(60rem 40rem at 110% 110%, #c9d9f7 0%, rgba(201,217,247,0) 65%),
     var(--page);
-  background-attachment: fixed;
 }
 
 /* Faint ruled lines, like the class treasurer's exercise book. */
@@ -75,14 +74,12 @@ h1 { font-size: 1.75rem; font-weight: 600; }
 h2 { font-size: 1.15rem; font-weight: 600; }
 h3 { font-size: 1rem; font-weight: 600; }
 p { margin: 0; }
-.serif { font-family: var(--serif); font-weight: 400; letter-spacing: 0; }
 .muted { color: var(--muted); }
 .small { font-size: .875rem; }
 .tiny { font-size: .78rem; }
 .mono { font-family: var(--mono); font-size: .92em; letter-spacing: .02em; }
 .num { font-variant-numeric: tabular-nums; }
 .nowrap { white-space: nowrap; }
-.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* ---------- glass ---------- */
 .glass, .card, .topbar, .tabbar, .sheet, .toast {
@@ -109,8 +106,6 @@ p { margin: 0; }
 .row { display: flex; align-items: center; gap: 10px; }
 .row.wrap { flex-wrap: wrap; }
 .spread { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.grid-2 { display: grid; grid-template-columns: 1fr; gap: 14px; }
-@media (min-width: 680px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
 
 .topbar {
   position: sticky; top: 8px; z-index: 20;
@@ -130,7 +125,6 @@ p { margin: 0; }
 .brand-text span { display: block; font-size: .74rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .card { border-radius: var(--radius); padding: 18px; }
-.card.tight { padding: 14px; }
 .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .card-head .muted { font-size: .85rem; }
 .divider { height: 1px; background: var(--line); margin: 14px 0; border: 0; }
@@ -149,7 +143,6 @@ p { margin: 0; }
 }
 .tabbar a svg { width: 22px; height: 22px; }
 .tabbar a[aria-current="page"] { background: rgba(24, 70, 196, .1); color: var(--blue); }
-.tabbar a .dot { position: absolute; }
 
 /* Admin section switcher */
 .subnav { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 8px; margin: -4px -2px 10px; scrollbar-width: none; }
@@ -223,7 +216,6 @@ textarea.input { min-height: 84px; resize: vertical; }
 
 .alert { padding: 12px 14px; border-radius: 12px; font-size: .92rem; border: 1px solid; }
 .alert.error { background: var(--overdue-bg); border-color: rgba(180,35,44,.25); color: #7d1219; }
-.alert.info { background: var(--blue-wash); border-color: rgba(24,70,196,.2); color: var(--blue-deep); }
 .alert.warn { background: var(--review-bg); border-color: rgba(138,90,0,.25); color: #5c3c00; }
 .alert.ok { background: var(--paid-bg); border-color: rgba(21,122,74,.25); color: #0d5233; }
 
@@ -412,3 +404,10 @@ a.notice { text-decoration: none; color: inherit; }
 .hero > * + * { margin-top: 10px; }
 .hero .figure { margin: 6px 0 4px; }
 .hero .row { margin-top: 16px; }
+.sheet-body { margin-top: 8px; }
+
+/* Glass inside glass adds a second blur pass for no visible gain on a near-flat
+   page; nested tiles use a plain translucent white instead. */
+.card .glass { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(255,255,255,.62); }
+.receipt th.r, .receipt td.r { text-align: right; }
+.receipt-head .mono { white-space: nowrap; }

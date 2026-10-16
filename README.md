@@ -72,6 +72,13 @@ Paste `supabase/tests/rules_test.sql` into the Supabase SQL editor and run it. I
 admins and members, walks through every rule above, and rolls everything back. The last line should read
 `ALL 20 CHECKS PASSED (rolled back)` (it is reported as an error on purpose — that is what undoes the changes).
 
+## Checking the site
+
+`tools/check.sh` lints the JavaScript, syntax-checks every module, then opens every page in headless
+Chromium against fake data (`tools/smoke.mjs`) and fails on any page error. It saves screenshots
+to the folder you pass it. Cloud sessions of Claude Code run `.claude/hooks/session-start.sh` first,
+which confirms the tools are present.
+
 ## Notes
 
 - Times are shown in Ghana time (GMT, no daylight saving).

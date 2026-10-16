@@ -9,22 +9,26 @@ import * as admin from './views/admin.js';
 const app = document.getElementById('app');
 
 // Hash routes keep GitHub Pages happy: every URL serves index.html.
-const memberRoutes = {
-  '': member.home,
-  pay: member.pay,
-  history: member.history,
-  receipt: member.receipt,
-  notices: member.notices,
-  account: member.account,
+// Keyed by the first one or two path segments; `tab` is the bottom tab to
+// highlight, and admin pages use the wide layout and require an admin.
+const routes = {
+  '': { view: member.home, tab: '' },
+  pay: { view: member.pay, tab: 'pay' },
+  history: { view: member.history, tab: 'history' },
+  receipt: { view: member.receipt, tab: 'history' }, // receipt/<payment id>
+  notices: { view: member.notices, tab: '' },
+  account: { view: member.account, tab: 'account' },
+  admin: { view: admin.dashboard, admin: true },
+  'admin/review': { view: admin.review, admin: true },
+  'admin/members': { view: admin.members, admin: true },
+  'admin/expenses': { view: admin.expenses, admin: true },
+  'admin/reports': { view: admin.reports, admin: true },
+  'admin/settings': { view: admin.settings, admin: true },
+  'admin/audit': { view: admin.audit, admin: true },
 };
-const adminRoutes = {
-  admin: admin.dashboard,
-  'admin/review': admin.review,
-  'admin/members': admin.members,
-  'admin/expenses': admin.expenses,
-  'admin/reports': admin.reports,
-  'admin/settings': admin.settings,
-  'admin/audit': admin.audit,
+const findRoute = (route) => {
+  const entry = routes[route.parts.slice(0, 2).join('/')] || routes[route.parts[0] || ''];
+  return entry && (!entry.admin || isAdmin()) ? entry : routes[''];
 };
 
 function parseHash() {
@@ -34,7 +38,7 @@ function parseHash() {
   return { path: parts.join('/'), parts, params: new URLSearchParams(query) };
 }
 
-function chrome(route, content) {
+function chrome(entry, content) {
   const p = state.profile;
   const tabs = [
     ['', 'home', 'Home'],
@@ -43,11 +47,10 @@ function chrome(route, content) {
   ];
   if (isAdmin()) tabs.push(['admin', 'shield', 'Admin']);
   else tabs.push(['account', 'users', 'Account']);
-  const top = route.path.split('/')[0];
-  const current = top === 'receipt' ? 'history' : top === 'notices' ? '' : top;
+  const current = entry.admin ? 'admin' : entry.tab;
 
   return [
-    h('div', { class: `shell ${route.path.startsWith('admin') ? 'wide' : ''}` },
+    h('div', { class: `shell ${entry.admin ? 'wide' : ''}` },
       h('header', { class: 'topbar' },
         h('a', { class: 'brand', href: '#/' },
           h('span', { class: 'brand-mark', 'aria-hidden': 'true' }, '19'),
@@ -79,14 +82,12 @@ async function render() {
 
   if (!isActive()) return mount(app, await auth.waiting(route));
 
-  let view = memberRoutes[route.parts[0] === 'receipt' ? 'receipt' : route.path];
-  if (route.path.startsWith('admin')) view = isAdmin() ? adminRoutes[route.path] : null;
-  if (!view) view = memberRoutes[''];
+  const entry = findRoute(route);
 
   const holder = h('div', { class: 'stack-lg' }, h('div', { class: 'empty' }, 'Loading…'));
-  mount(app, chrome(route, holder));
+  mount(app, chrome(entry, holder));
   try {
-    const content = await view(route);
+    const content = await entry.view(route);
     if (seq === renderSeq) mount(holder, content);
   } catch (e) {
     console.error(e);

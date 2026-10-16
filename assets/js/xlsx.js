@@ -20,14 +20,15 @@ function colName(i) {
   return s;
 }
 
-function cell(ref, value, kind, bold) {
+// textStyle overrides the plain/quote-prefix text style (titles, headers, totals).
+function cell(ref, value, kind, textStyle, total = false) {
   if (value == null || value === '') return '';
-  if ((kind === 'money' || kind === 'int') && value !== '' && !isNaN(Number(value))) {
-    const st = kind === 'int' ? ST.int : bold ? ST.moneyBold : ST.money;
+  if ((kind === 'money' || kind === 'int') && !isNaN(Number(value))) {
+    const st = kind === 'int' ? ST.int : total ? ST.moneyBold : ST.money;
     return `<c r="${ref}" s="${st}"><v>${Number(value)}</v></c>`;
   }
   const text = String(value);
-  const st = bold === 'title' ? ST.title : bold === 'header' ? ST.header : bold ? ST.bold : /^[=+\-@\t\r]/.test(text) ? ST.quote : ST.text;
+  const st = textStyle ?? (/^[=+\-@\t\r]/.test(text) ? ST.quote : ST.text);
   return `<c r="${ref}" t="inlineStr" s="${st}"><is><t xml:space="preserve">${esc(text)}</t></is></c>`;
 }
 
@@ -36,12 +37,12 @@ function sheetXml(sh) {
   let r = 0;
   const addRow = (cells) => { r += 1; rows.push(`<row r="${r}">${cells.join('')}</row>`); };
 
-  (sh.preamble || []).forEach((line, i) => addRow(line.map((v, c) => cell(`${colName(c)}${r + 1}`, v, 'text', i === 0 ? 'title' : false))));
+  (sh.preamble || []).forEach((line, i) => addRow(line.map((v, c) => cell(`${colName(c)}${r + 1}`, v, 'text', i === 0 ? ST.title : undefined))));
   if (sh.preamble?.length) addRow([]);
   const headerRow = r + 1;
-  addRow(sh.columns.map((c, i) => cell(`${colName(i)}${r + 1}`, c.header, 'text', 'header')));
+  addRow(sh.columns.map((c, i) => cell(`${colName(i)}${r + 1}`, c.header, 'text', ST.header)));
   for (const row of sh.rows) addRow(row.map((v, i) => cell(`${colName(i)}${r + 1}`, v, sh.columns[i]?.type)));
-  if (sh.totals) addRow(sh.totals.map((v, i) => cell(`${colName(i)}${r + 1}`, v, sh.columns[i]?.type, true)));
+  if (sh.totals) addRow(sh.totals.map((v, i) => cell(`${colName(i)}${r + 1}`, v, sh.columns[i]?.type, ST.bold, true)));
 
   const cols = sh.columns.map((c, i) => `<col min="${i + 1}" max="${i + 1}" width="${c.width || 14}" customWidth="1"/>`).join('');
   const last = `${colName(sh.columns.length - 1)}${Math.max(r, headerRow)}`;

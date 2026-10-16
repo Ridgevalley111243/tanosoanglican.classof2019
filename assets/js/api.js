@@ -20,10 +20,8 @@ export function friendlyError(error) {
   return 'Something went wrong. Please try again.';
 }
 
-export class ApiError extends Error {}
-
 function unwrap({ data, error }) {
-  if (error) throw new ApiError(friendlyError(error));
+  if (error) throw new Error(friendlyError(error));
   return data;
 }
 
@@ -43,6 +41,13 @@ export async function fetchAll(build, pageSize = 1000) {
 // ---- session state shared by the views ----
 export const state = { session: null, profile: null, member: null, settings: null };
 
+export const loadSettings = () => run(sb.from('group_settings').select('*').eq('id', 1).single());
+
+// A payment's months for its current review round, oldest first.
+export const currentAllocations = (p) => p.payment_allocations
+  .filter((a) => a.round === p.review_round)
+  .sort((a, b) => a.dues_months.period.localeCompare(b.dues_months.period));
+
 export async function loadIdentity() {
   const { data: { session } } = await sb.auth.getSession();
   state.session = session;
@@ -52,7 +57,7 @@ export async function loadIdentity() {
   const [profile, member, settings] = await Promise.all([
     run(sb.from('profiles').select('*').eq('id', uid).maybeSingle()),
     run(sb.from('members').select('*').eq('profile_id', uid).maybeSingle()),
-    run(sb.from('group_settings').select('*').eq('id', 1).maybeSingle()),
+    loadSettings(),
   ]);
   Object.assign(state, { profile, member, settings });
   return state;

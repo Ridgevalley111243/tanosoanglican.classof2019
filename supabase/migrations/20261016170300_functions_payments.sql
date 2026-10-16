@@ -2,8 +2,11 @@
 -- Payments
 ------------------------------------------------------------------------------
 
--- Allocations carry the review round they belong to. Only the payment's
--- current round counts; earlier rounds stay as history instead of being erased.
+-- Allocations carry the review round they belong to; only rows matching the
+-- payment's current review_round count. A resubmission re-tags the months it
+-- keeps and adds new ones; months it drops keep their old round number and are
+-- ignored. (Older rounds are only partly preserved here — the audit log holds
+-- the full history of each resubmission.)
 alter table public.payment_allocations add column round smallint not null default 1;
 
 -- Checks a set of months and writes the allocations for one payment.

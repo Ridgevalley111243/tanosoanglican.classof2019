@@ -1,13 +1,13 @@
-import { sb, state, rpc, run, isAdmin, friendlyError } from '../api.js';
+import { sb, state, rpc, run, isAdmin, friendlyError, currentAllocations } from '../api.js';
 import {
-  h, icon, chip, cedis, monthLabel, monthShortYear, dayLabel, dateLabel, dateTimeLabel, timeLabel, relative,
-  greeting, todayAccra, nowTimeAccra, thisMonth, addMonths, toast, busy, errorBox, empty, field, mount,
-  NETWORKS, networkTag, stateText,
+  h, icon, chip, cedis, cedisFigure, monthLabel, monthShortYear, dayLabel, dateLabel, dateTimeLabel, timeLabel, relative,
+  greeting, todayAccra, nowTimeAccra, thisMonth, addMonths, toast, busy, empty, field, form, stat,
+  plural, firstName, OWING_STATES, NETWORKS, networkTag, stateText,
 } from '../ui.js';
 import { go, refresh } from '../nav.js';
 import { GROUP_SHORT, SCHOOL } from '../config.js';
 
-const OWING = new Set(['overdue', 'open']);
+const OWING = new Set(OWING_STATES);
 
 function notLinked() {
   return h('div', { class: 'card stack' },
@@ -20,7 +20,7 @@ function notLinked() {
 const myDues = () => run(sb.from('dues_overview').select('*').eq('member_id', state.member.id).order('period'));
 
 const listMonths = (rows) => {
-  const names = rows.map((r) => monthLabel(r.period).split(' ')[0]);
+  const names = rows.map((r) => firstName(monthLabel(r.period)));
   const years = new Set(rows.map((r) => r.period.slice(0, 4)));
   if (names.length === 0) return '';
   const last = rows[rows.length - 1].period.slice(0, 4);
@@ -34,7 +34,7 @@ export async function home() {
   const [dues, notes, summary, fixes] = await Promise.all([
     myDues(),
     run(sb.from('notifications').select('*').is('read_at', null).order('created_at', { ascending: false }).limit(3)),
-    rpc('finance_summary'),
+    state.settings.show_balance_to_members ? rpc('finance_summary') : null,
     run(sb.from('payments').select('id').eq('member_id', state.member.id).eq('status', 'correction_requested')),
   ]);
 
@@ -42,8 +42,9 @@ export async function home() {
   const overdue = dues.filter((d) => d.state === 'overdue');
   const total = owing.reduce((t, d) => t + Number(d.amount_due), 0);
   const inReview = dues.filter((d) => d.state === 'in_review');
-  const paidThrough = [...dues].reverse().find((d) => d.state === 'paid' && dues.filter((x) => x.period <= d.period).every((x) => x.state === 'paid'));
-  const firstName = state.profile.full_name.split(' ')[0];
+  // Last month of the unbroken run of paid months from the start.
+  const firstUnpaid = dues.findIndex((d) => d.state !== 'paid');
+  const paidThrough = dues[(firstUnpaid === -1 ? dues.length : firstUnpaid) - 1];
 
   let sub;
   if (total === 0 && inReview.length) sub = `Nothing to pay. ${listMonths(inReview)} is being checked by the admins.`;
@@ -54,13 +55,13 @@ export async function home() {
   }
 
   return [
-    h('p', { class: 'greeting' }, `${greeting()}, `, h('em', {}, firstName)),
+    h('p', { class: 'greeting' }, `${greeting()}, `, h('em', {}, firstName(state.profile.full_name))),
 
     h('section', { class: 'card hero' },
       h('p', { class: 'label' }, total ? 'You owe' : 'Your dues'),
-      h('p', { class: 'figure' }, h('small', {}, 'GH₵'), Number(total).toLocaleString('en-GH', { minimumFractionDigits: 0 })),
+      h('p', { class: 'figure' }, h('small', {}, 'GH₵'), cedisFigure(total)),
       h('p', { class: 'muted' }, sub),
-      overdue.length ? h('p', { class: 'small' }, chip('overdue', `${overdue.length} month${overdue.length > 1 ? 's' : ''} overdue`)) : null,
+      overdue.length ? h('p', { class: 'small' }, chip('overdue', `${plural(overdue.length, 'month')} overdue`)) : null,
       h('div', { class: 'row wrap' },
         h('a', { class: 'btn primary', href: '#/pay' }, icon('pay'), total ? 'Record a payment' : 'Pay ahead'),
         h('a', { class: 'btn', href: '#/history' }, 'My payments'))),
@@ -93,7 +94,6 @@ const ordinal = (n) => {
   const teen = n % 100 >= 11 && n % 100 <= 13;
   return `${n}${teen ? 'th' : { 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th'}`;
 };
-const stat = (label, value, note) => h('div', { class: 'glass stat' }, h('p', { class: 'label' }, label), h('p', { class: 'value num' }, value), note ? h('p', { class: 'note' }, note) : null);
 
 function noticeItem(n) {
   const ic = { payment_approved: 'check', payment_rejected: 'x', payment_correction: 'alert', overdue: 'alert', account: 'users' }[n.kind] || 'bell';
@@ -134,8 +134,6 @@ export async function pay(route) {
 
   const totalEl = h('span', { class: 'num' });
   const confirmText = h('span');
-  const err = h('div');
-
   const boxes = options.map((o) => h('label', { class: 'check' },
     h('input', { type: 'checkbox', name: 'period', value: o.period, checked: o.checked, onchange: update }),
     h('span', {}, h('b', {}, monthLabel(o.period)), ' ',
@@ -148,7 +146,7 @@ export async function pay(route) {
     const sel = selected();
     const total = sel.reduce((t, o) => t + o.amount, 0);
     totalEl.textContent = cedis(total);
-    confirmText.textContent = `I sent exactly ${cedis(total)} for ${sel.length} month${sel.length === 1 ? '' : 's'}.`;
+    confirmText.textContent = `I sent exactly ${cedis(total)} for ${plural(sel.length, 'month')}.`;
   }
   update();
 
@@ -158,11 +156,11 @@ export async function pay(route) {
       h('input', { type: 'radio', name: 'network', value: k, checked: (f.network || 'mtn') === k }),
       h('span', {}, v.short), h('small', {}, v.name))));
 
-  const formEl = h('form', { class: 'stack-lg', novalidate: true },
+  const formEl = form(submit,
     h('section', { class: 'card' },
       h('div', { class: 'card-head' }, h('h2', {}, '1. Which months?'), h('span', { class: 'muted' }, 'Whole months only')),
       h('div', { class: 'stack' }, boxes),
-      blocked.length ? h('p', { class: 'small muted', style: null }, `Not shown: ${listMonths(blocked)} — already on a payment being checked.`) : null),
+      blocked.length ? h('p', { class: 'small muted' }, `Not shown: ${listMonths(blocked)} — already on a payment being checked.`) : null),
 
     h('section', { class: 'card' },
       h('div', { class: 'card-head' }, h('h2', {}, '2. Send the money'), h('span', { class: 'figure-inline' }, totalEl)),
@@ -182,22 +180,18 @@ export async function pay(route) {
           field('Time', h('input', { class: 'input', type: 'time', name: 'time', required: true, value: timeLabel(f.paid_time) || nowTimeAccra() }))),
         h('label', { class: 'check' }, h('input', { type: 'checkbox', name: 'confirm', required: true }), confirmText))),
 
-    err,
     h('button', { class: 'btn primary block', type: 'submit' }, icon('check'), fixId ? 'Send the corrected payment' : 'Submit for checking'),
     h('p', { class: 'small muted' }, 'Two admins will check this against the MoMo statement. You’ll get a receipt once both confirm.'));
 
-  formEl.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    mount(err);
-    const fd = new FormData(formEl);
+  formEl.className = 'stack-lg';
+
+  async function submit(fd) {
     const sel = selected();
-    const problem =
-      !sel.length ? 'Tick at least one month.' :
-      !fd.get('txn').trim() ? 'Enter the transaction ID from your MoMo message.' :
-      fd.get('sender') && !/^0\d{9}$/.test(fd.get('sender').trim()) ? 'The sending number should be 10 digits, starting with 0.' :
-      !fd.get('date') || !fd.get('time') ? 'Enter the date and time of the payment.' :
-      !fd.get('confirm') ? 'Tick the box to confirm the amount you sent.' : null;
-    if (problem) { mount(err, errorBox(problem)); err.scrollIntoView({ block: 'center' }); return; }
+    // The database checks the payment details; these are about the form itself
+    // (an empty date or time wouldn't even reach the database's checks).
+    if (!sel.length) throw new Error('Tick at least one month.');
+    if (!fd.get('date') || !fd.get('time')) throw new Error('Enter the date and time of the payment.');
+    if (!fd.get('confirm')) throw new Error('Tick the box to confirm the amount you sent.');
 
     const args = {
       p_network: fd.get('network'),
@@ -208,15 +202,11 @@ export async function pay(route) {
       p_paid_time: fd.get('time'),
       p_periods: sel.map((o) => o.period),
     };
-    await busy(formEl.querySelector('button[type=submit]'), async () => {
-      try {
-        if (fixId) await rpc('resubmit_payment', { p_payment: fixId, ...args });
-        else await rpc('submit_payment', args);
-      } catch (ex) { mount(err, errorBox(ex.message)); err.scrollIntoView({ block: 'center' }); return; }
-      toast('Sent. The admins will check it.');
-      go('history');
-    });
-  });
+    if (fixId) await rpc('resubmit_payment', { p_payment: fixId, ...args });
+    else await rpc('submit_payment', args);
+    toast('Sent. The admins will check it.');
+    go('history');
+  }
 
   return [
     h('div', { class: 'page-title' }, h('h1', {}, fixId ? 'Fix your payment' : 'Record a payment'),
@@ -228,10 +218,7 @@ export async function pay(route) {
 
 // ---------------------------------------------------------------- history
 const PAYMENT_SELECT = '*, receipts(receipt_number, issued_at), payment_allocations(round, amount, dues_months(period))';
-const currentMonths = (p) => p.payment_allocations
-  .filter((a) => a.round === p.review_round)
-  .map((a) => a.dues_months)
-  .sort((a, b) => a.period.localeCompare(b.period));
+const currentMonths = (p) => currentAllocations(p).map((a) => a.dues_months);
 
 export async function history() {
   if (!state.member) return notLinked();
@@ -266,8 +253,7 @@ export async function receipt(route) {
       h('p', { class: 'muted' }, 'Receipts are issued only after two admins confirm a payment.'),
       h('a', { class: 'btn', href: '#/history' }, 'Back'));
   }
-  const months = p.payment_allocations.filter((a) => a.round === p.review_round)
-    .sort((a, b) => a.dues_months.period.localeCompare(b.dues_months.period));
+  const months = currentAllocations(p);
   const back = isAdmin() && p.member_id !== state.member?.id ? '#/admin/review' : '#/history';
 
   return [
@@ -290,7 +276,7 @@ export async function receipt(route) {
         h('tbody', {},
           months.map((a) => h('tr', {}, h('td', {}, monthLabel(a.dues_months.period)), h('td', { class: 'r num' }, cedis(a.amount)))),
           h('tr', { class: 'total' }, h('td', {}, 'Total received'), h('td', { class: 'r num' }, cedis(p.amount))))),
-      h('p', { class: 'tiny muted', style: null }, 'Times are Ghana time (GMT). This receipt was issued automatically after two separate admins confirmed the payment against the Mobile Money statement.')),
+      h('p', { class: 'tiny muted' }, 'Times are Ghana time (GMT). This receipt was issued automatically after two separate admins confirmed the payment against the Mobile Money statement.')),
   ];
 }
 
