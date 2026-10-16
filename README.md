@@ -51,14 +51,9 @@ supabase/tests/rules_test.sql   end-to-end test of the rules (rolls itself back)
    not enough to onboard a whole class. Either add your own SMTP (Authentication → Emails → SMTP),
    or turn off "Confirm email" (Authentication → Providers → Email). Turning it off is reasonable here
    because every new account already waits for an admin's approval; password-reset emails still need SMTP to be reliable.
-4. **Make the first two admins:** both register on the site like everyone else, then run in the SQL editor
-   (replace the emails):
-   ```sql
-   update public.profiles set is_admin = true, account_status = 'active'
-   where email in ('first@example.com', 'second@example.com');
-   ```
-   After that, admin rights are changed from Admin → Members → Manage: one admin proposes, another confirms.
-   Make at least three admins, since nobody can review their own payment.
+4. **Founding admins (done 16 Oct 2026):** Eunice Achiaa Annor, Kennedy Agyapong and George Danquah
+   were set up directly in the database as active admins with member codes. Every later admin change
+   is made from Admin → Members → Manage: one admin proposes, another confirms.
 5. **Before members join:** set the MoMo instructions in Admin → Settings and check the
    dues start month (currently October 2026).
 6. **Add the class list** in Admin → Members. Each person gets a code to share (there's a WhatsApp button).

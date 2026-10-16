@@ -656,6 +656,7 @@ const ACTIONS = {
   'member_code.failed': 'entered a wrong member code', 'member_code.released': 'unlinked a member code',
   'account.active': 'activated an account', 'account.suspended': 'blocked an account', 'account.pending': 'set an account to waiting',
   'admin.granted': 'confirmed a new admin', 'admin.revoked': 'confirmed removing an admin',
+  'admin.bootstrap': 'set up as a founding admin',
   'admin.grant_proposed': 'proposed a new admin', 'admin.revoke_proposed': 'proposed removing an admin',
   'settings.updated': 'changed settings',
   'dues.generated': 'created monthly dues',
