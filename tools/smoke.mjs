@@ -145,6 +145,9 @@ const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', async (m) => { if (m.type() === 'error') errors.push(m.text() + ' ' + JSON.stringify(m.location())); });
 
+// THEME=dark|light starts the site in that theme.
+if (process.env.THEME) await page.addInitScript((t) => localStorage.setItem('c19-theme', t), process.env.THEME);
+
 if (who !== 'anon') {
   await page.addInitScript(([key, sess]) => localStorage.setItem(key, sess), ['sb-ypliibgdetwgbdlxjirg-auth-token', JSON.stringify({
     access_token: fakeJwt(uid), token_type: 'bearer', expires_in: 3600, expires_at: 4102444800, refresh_token: 'r',

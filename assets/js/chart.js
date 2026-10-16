@@ -60,7 +60,7 @@ export function duesChart(rows) {
     svg.append(col, hit);
   });
 
-  svg.append(s('line', { x1: pad.l, x2: W - pad.r, y1: y(0), y2: y(0), stroke: 'rgba(13,27,51,.25)', 'stroke-width': 1 }));
+  svg.append(s('line', { class: 'baseline', x1: pad.l, x2: W - pad.r, y1: y(0), y2: y(0) }));
   wrap.append(svg, tip);
 
   return h('div', {},

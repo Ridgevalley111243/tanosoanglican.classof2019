@@ -3,11 +3,13 @@
 const browser = Object.fromEntries([
   'window', 'document', 'location', 'history', 'navigator', 'console', 'setTimeout', 'clearTimeout',
   'URL', 'URLSearchParams', 'Blob', 'TextEncoder', 'DataView', 'Uint8Array', 'Uint32Array', 'ArrayBuffer',
-  'FormData', 'Intl', 'Node', 'Promise', 'Map', 'Set',
+  'FormData', 'Intl', 'Node', 'Promise', 'Map', 'Set', 'localStorage', 'matchMedia',
 ].map((g) => [g, 'readonly']));
 
 export default [
   { ignores: ['assets/vendor/**', 'tools/**'] },
+  // theme-init.js is a classic script that runs before the modules load.
+  { files: ['assets/js/theme-init.js'], languageOptions: { sourceType: 'script', ecmaVersion: 2019 } },
   {
     files: ['assets/js/**/*.js'],
     languageOptions: { ecmaVersion: 2022, sourceType: 'module', globals: browser },

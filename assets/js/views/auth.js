@@ -1,6 +1,7 @@
 import { sb, state, rpc, friendlyError } from '../api.js';
 import { h, icon, field, toast, mount, form, sheet, copyText } from '../ui.js';
 import { refresh } from '../nav.js';
+import { themeSwitch } from '../theme.js';
 import { SCHOOL, TERMS_VERSION } from '../config.js';
 
 const siteUrl = () => location.origin + location.pathname;
@@ -8,6 +9,7 @@ const siteUrl = () => location.origin + location.pathname;
 function frame(title, lead, ...body) {
   return h('div', { class: 'auth' },
     h('div', { class: 'auth-watermark', 'aria-hidden': 'true' }, '2019'),
+    h('div', { class: 'auth-theme' }, themeSwitch()),
     h('div', { class: 'auth-card' },
       h('div', { class: 'row' },
         h('img', { class: 'brand-logo auth-logo', src: 'assets/logo.png', alt: 'Tanoso Anglican J.H.S crest', width: '56', height: '56' }),

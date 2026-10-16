@@ -1,6 +1,7 @@
 import { sb, state, loadIdentity, isAdmin, isActive } from './api.js';
 import { h, mount, icon } from './ui.js';
 import { skeleton } from './skeleton.js';
+import { initTheme, themeSwitch } from './theme.js';
 import { setRenderer, go } from './nav.js';
 import { GROUP_SHORT, SCHOOL } from './config.js';
 import * as auth from './views/auth.js';
@@ -62,7 +63,8 @@ function chrome(entry, content) {
           h('span', { class: 'brand-text' }, h('b', {}, `${GROUP_SHORT} Dues`), h('span', {}, SCHOOL))),
         // On wide screens the main links sit here; on phones they're the bottom tab bar.
         h('nav', { class: 'topnav', 'aria-label': 'Main' }, links()),
-        h('div', { class: 'row' },
+        h('div', { class: 'row topbar-tools' },
+          themeSwitch(),
           h('a', { class: 'btn ghost icon-btn', href: '#/notices', title: 'Notices', 'aria-label': 'Notices' }, icon('bell')),
           h('a', { class: 'btn ghost icon-btn', href: '#/account', title: p?.full_name || 'Account', 'aria-label': 'Your account' }, icon('users')))),
       h('main', { id: 'main' }, content),
@@ -108,6 +110,7 @@ async function render() {
 }
 
 async function start() {
+  initTheme();
   // Arrived from a password-reset email: PKCE code in the query string.
   const params = new URLSearchParams(location.search);
   const next = params.get('next');

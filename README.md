@@ -67,6 +67,12 @@ Paste `supabase/tests/rules_test.sql` into the Supabase SQL editor and run it. I
 admins and members, walks through every rule above, and rolls everything back. The last line should read
 `ALL 20 CHECKS PASSED (rolled back)` (it is reported as an error on purpose — that is what undoes the changes).
 
+## Light and dark mode
+
+A switch in the header (and on the sign-in pages) changes between light and dark. The choice is saved
+on that device; until someone chooses, the site follows the phone or computer setting. Receipts stay
+white "paper" in both modes and always print in light colours.
+
 ## Checking the site
 
 `tools/check.sh` lints the JavaScript, syntax-checks every module, then opens every page in headless

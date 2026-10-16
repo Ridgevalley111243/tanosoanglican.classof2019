@@ -1,6 +1,7 @@
 import { h, icon, toast, mount, errorBox } from '../ui.js';
 import { sb, state, rpc } from '../api.js';
 import { GROUP_SHORT, SCHOOL, TERMS_VERSION } from '../config.js';
+import { themeSwitch } from '../theme.js';
 
 // Terms and privacy, written to match what the system actually does.
 // If a rule in the database changes, update the matching line here and bump TERMS_VERSION.
@@ -62,7 +63,8 @@ function page(title, intro, ...sections) {
       h('a', { class: 'btn ghost small', href: back }, icon('back'), state.session ? 'Back' : 'Back to sign-up'),
       h('div', { class: 'row' },
         h('img', { class: 'brand-logo', src: 'assets/logo.png', alt: '', width: '40', height: '40' }),
-        h('div', { class: 'brand-text' }, h('b', {}, `${GROUP_SHORT} Dues`), h('span', {}, SCHOOL)))),
+        h('div', { class: 'brand-text' }, h('b', {}, `${GROUP_SHORT} Dues`), h('span', {}, SCHOOL)),
+        themeSwitch())),
     h('article', { class: 'card legal' },
       h('h1', {}, title),
       h('p', { class: 'muted small' }, `Last updated ${UPDATED}`),

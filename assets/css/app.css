@@ -520,3 +520,181 @@ dialog.sheet p + p { margin-top: 8px; }
 .terms-sheet > * + * { margin-top: 10px; }
 .terms-sheet .terms-points { margin: 6px 0 0; padding-left: 18px; color: var(--ink-2); }
 .terms-sheet .terms-points li + li { margin-top: 4px; }
+
+/* ---------- theme switch ----------
+   A day-sky track; the sun slides across, its rays fold away and a bite
+   turns it into a crescent moon while stars fade in on a night sky. */
+.theme-switch {
+  -webkit-appearance: none; appearance: none; border: 0; padding: 0; margin: 0 4px 0 0;
+  position: relative; width: 58px; height: 32px; flex: none; cursor: pointer; background: none;
+  border-radius: 999px;
+}
+.theme-switch:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+.ts-track {
+  position: absolute; inset: 0; border-radius: inherit; overflow: hidden;
+  background: linear-gradient(180deg, #8fc3ff 0%, #c9e3ff 100%);
+  box-shadow: inset 0 1px 3px rgba(13,27,51,.25), 0 1px 0 rgba(255,255,255,.6);
+  transition: background .45s ease;
+}
+.ts-track::after { /* night sky, faded in */
+  content: ""; position: absolute; inset: 0; opacity: 0;
+  background: linear-gradient(180deg, #0d1736 0%, #23356b 100%);
+  transition: opacity .45s ease;
+}
+.ts-cloud {
+  position: absolute; right: 7px; bottom: 6px; width: 18px; height: 7px; border-radius: 6px; background: #fff;
+  box-shadow: -5px -3px 0 1px #fff, 3px -4px 0 0 #fff; opacity: .95;
+  transition: transform .45s cubic-bezier(.5,0,.2,1), opacity .3s ease;
+}
+.ts-star {
+  position: absolute; z-index: 1; width: 3px; height: 3px; border-radius: 50%; background: #fff;
+  opacity: 0; transform: scale(.2); transition: opacity .3s ease, transform .4s cubic-bezier(.3,1.6,.5,1);
+}
+.ts-star.s1 { left: 9px; top: 8px; }
+.ts-star.s2 { left: 17px; top: 18px; width: 2px; height: 2px; }
+.ts-star.s3 { left: 24px; top: 9px; width: 2px; height: 2px; }
+.ts-thumb {
+  position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; z-index: 2; overflow: hidden;
+  background: radial-gradient(circle at 35% 30%, #fff7cf 0%, #ffd34d 55%, #f5a800 100%);
+  box-shadow: 0 0 0 3px rgba(255,214,90,.35), 0 0 12px 3px rgba(255,190,40,.55), 0 2px 5px rgba(13,27,51,.25);
+  transition: transform .55s cubic-bezier(.68,-.4,.27,1.4), background .45s ease, box-shadow .45s ease;
+}
+.ts-crater {
+  position: absolute; border-radius: 50%; background: #b9c3dc;
+  box-shadow: inset 1px 1px 1px rgba(80,95,140,.45);
+  opacity: 0; transform: scale(.3); transition: opacity .3s ease .15s, transform .4s cubic-bezier(.3,1.6,.5,1) .15s;
+}
+.ts-crater.c1 { width: 7px; height: 7px; left: 6px; top: 6px; }
+.ts-crater.c2 { width: 5px; height: 5px; left: 15px; top: 13px; }
+.ts-crater.c3 { width: 4px; height: 4px; left: 8px; top: 16px; }
+.theme-switch:hover .ts-thumb { filter: brightness(1.04); }
+
+.theme-switch[aria-checked="true"] .ts-track::after { opacity: 1; }
+.theme-switch[aria-checked="true"] .ts-cloud { transform: translateX(16px); opacity: 0; }
+.theme-switch[aria-checked="true"] .ts-star { opacity: 1; transform: scale(1); }
+.theme-switch[aria-checked="true"] .ts-star.s2 { transition-delay: .1s; }
+.theme-switch[aria-checked="true"] .ts-star.s3 { transition-delay: .2s; }
+.theme-switch[aria-checked="true"] .ts-thumb {
+  transform: translateX(26px) rotate(320deg);
+  background: radial-gradient(circle at 35% 30%, #ffffff 0%, #e4e9f6 60%, #c9d2ea 100%);
+  box-shadow: 0 0 0 3px rgba(220,228,255,.12), 0 0 10px 2px rgba(200,215,255,.35), 0 2px 6px rgba(0,0,0,.45);
+}
+.theme-switch[aria-checked="true"] .ts-crater { opacity: 1; transform: scale(1); }
+.topbar-tools { gap: 4px; }
+.auth-theme { position: absolute; top: 16px; right: 16px; z-index: 2; }
+
+/* Smooth colour change across the page only while switching themes.
+   The switch keeps its own animation. */
+.theme-anim :is(body, body *:not(.theme-switch, .theme-switch *)) {
+  transition: background-color .4s ease, border-color .4s ease, color .3s ease, fill .3s ease, stroke .3s ease !important;
+}
+
+/* ---------- dark mode ----------
+   Screen only: printing (receipts) always uses the light colours. */
+@media screen {
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #e9eefb;
+  --ink-2: #c4cee4;
+  --muted: #98a5c0;
+  --line: rgba(233, 238, 251, .10);
+  --line-strong: rgba(233, 238, 251, .18);
+  --blue: #86a8ff;
+  --blue-2: #6f95fb;
+  --blue-deep: #b4c8ff;
+  --blue-wash: rgba(134, 168, 255, .14);
+  --page: #0b1220;
+  --paid: #6fdba6;      --paid-bg: rgba(111, 219, 166, .14);
+  --review: #f3c766;    --review-bg: rgba(243, 199, 102, .14);
+  --overdue: #ff9499;   --overdue-bg: rgba(255, 148, 153, .14);
+  --open: #86a8ff;      --open-bg: rgba(134, 168, 255, .14);
+  --neutral-bg: rgba(233, 238, 251, .08);
+  --chart-paid: #5a83f0;
+  --chart-owed: #cf7a22;
+  --glass: rgba(22, 32, 54, .62);
+  --glass-strong: rgba(24, 34, 58, .94);
+  --glass-edge: rgba(255, 255, 255, .08);
+  --shadow: 0 1px 0 rgba(255, 255, 255, .05) inset, 0 18px 40px -22px rgba(0, 0, 0, .75), 0 2px 6px -2px rgba(0, 0, 0, .4);
+}
+[data-theme="dark"] body {
+  background:
+    radial-gradient(80rem 45rem at -10% -20%, #1b2a52 0%, rgba(27,42,82,0) 60%),
+    radial-gradient(60rem 40rem at 110% 110%, #13254a 0%, rgba(19,37,74,0) 65%),
+    var(--page);
+}
+[data-theme="dark"] .ledger { background-image: repeating-linear-gradient(to bottom, transparent 0 31px, rgba(134,168,255,.05) 31px 32px); }
+[data-theme="dark"] .ledger::before { background: rgba(255,148,153,.12); }
+[data-theme="dark"] .hero::after { background: linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent); }
+[data-theme="dark"] .auth-watermark { -webkit-text-stroke-color: rgba(134,168,255,.14); }
+
+/* surfaces and controls */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  [data-theme="dark"] .glass, [data-theme="dark"] .card, [data-theme="dark"] .topbar,
+  [data-theme="dark"] .tabbar, [data-theme="dark"] .sheet, [data-theme="dark"] .toast { background: rgba(20,29,49,.96); }
+}
+[data-theme="dark"] .card .glass { background: rgba(255,255,255,.04); }
+[data-theme="dark"] .btn { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.12); color: var(--ink); box-shadow: inset 0 1px 0 rgba(255,255,255,.05); }
+[data-theme="dark"] .btn:hover { background: rgba(255,255,255,.11); }
+[data-theme="dark"] .btn.ghost { background: transparent; border-color: transparent; }
+[data-theme="dark"] .btn.ghost:hover { background: rgba(255,255,255,.07); }
+[data-theme="dark"] .btn.primary { color: #fff; border-color: rgba(120,155,255,.5); background: linear-gradient(180deg, #3566ea, #2449c9); box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 8px 18px -8px rgba(53,102,234,.7); }
+[data-theme="dark"] .btn.primary:hover { background: linear-gradient(180deg, #4172f0, #2a51d3); }
+[data-theme="dark"] .btn.danger { color: var(--overdue); }
+[data-theme="dark"] .input { background: rgba(8,13,26,.55); border-color: rgba(233,238,251,.16); box-shadow: none; }
+[data-theme="dark"] .input::placeholder { color: #7f8ba6; }
+[data-theme="dark"] .input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(134,168,255,.25); }
+[data-theme="dark"] .segmented label { background: rgba(255,255,255,.04); }
+[data-theme="dark"] .segmented label:has(input:checked) { background: rgba(134,168,255,.14); }
+[data-theme="dark"] .subnav a { background: rgba(255,255,255,.04); }
+[data-theme="dark"] .subnav a[aria-current="page"], [data-theme="dark"] .chip.admin { background: var(--ink); border-color: var(--ink); color: #0b1220; }
+[data-theme="dark"] .tabbar a[aria-current="page"], [data-theme="dark"] .topnav a[aria-current="page"] { background: rgba(134,168,255,.16); color: var(--blue); }
+[data-theme="dark"] .topnav a:hover { background: rgba(255,255,255,.06); }
+[data-theme="dark"] dialog.sheet::backdrop { background: rgba(0,0,0,.6); }
+[data-theme="dark"] .month { background: rgba(255,255,255,.04); }
+[data-theme="dark"] .month.overdue { background: rgba(255,148,153,.10); border-color: rgba(255,148,153,.4); }
+[data-theme="dark"] .month.open { border-color: rgba(134,168,255,.45); }
+[data-theme="dark"] .txn { background: rgba(255,255,255,.06); }
+[data-theme="dark"] .txn button { background: rgba(255,255,255,.1); color: var(--ink); }
+[data-theme="dark"] .code-box { border-color: rgba(134,168,255,.25); }
+
+/* text colours that were tuned for light backgrounds */
+[data-theme="dark"] .alert.error, [data-theme="dark"] .toast.error { color: #ffc2c5; border-color: rgba(255,148,153,.35); }
+[data-theme="dark"] .toast.error { background: rgba(70,22,30,.92); }
+[data-theme="dark"] .alert.warn { color: #f8dc9a; border-color: rgba(243,199,102,.35); }
+[data-theme="dark"] .alert.ok, [data-theme="dark"] .toast.ok { color: #a6ecc8; border-color: rgba(111,219,166,.35); }
+[data-theme="dark"] .chip.needs_correction, [data-theme="dark"] .chip.correction_requested { background: rgba(255,170,110,.15); color: #ffc08f; }
+[data-theme="dark"] .network.mtn { background: rgba(255,203,5,.16); border-color: rgba(255,203,5,.5); color: #ffe27a; }
+[data-theme="dark"] .network.telecel { background: rgba(255,90,100,.15); border-color: rgba(255,120,128,.5); color: #ffb0b5; }
+[data-theme="dark"] .network.airteltigo { background: rgba(134,168,255,.15); border-color: rgba(134,168,255,.5); color: #c2d3ff; }
+[data-theme="dark"] .footer-note a { color: var(--muted); }
+
+/* chart */
+[data-theme="dark"] .chart .grid line { stroke: rgba(255,255,255,.08); }
+[data-theme="dark"] .chart .baseline { stroke: rgba(255,255,255,.3); }
+[data-theme="dark"] .chart-tip { background: rgba(20,29,49,.97); box-shadow: 0 10px 24px -12px rgba(0,0,0,.7); }
+
+/* skeletons */
+[data-theme="dark"] .sk { background: linear-gradient(90deg, rgba(255,255,255,.05) 30%, rgba(255,255,255,.13) 50%, rgba(255,255,255,.05) 70%); background-size: 300% 100%; }
+
+/* MoMo network card: same colours, toned for a dark page */
+[data-theme="dark"] .net-card[data-network="mtn"] { background: linear-gradient(180deg, rgba(255,203,5,.17), rgba(255,203,5,.06)); border-color: rgba(255,203,5,.5); }
+[data-theme="dark"] .net-card[data-network="telecel"] { background: linear-gradient(180deg, rgba(227,6,19,.22), rgba(227,6,19,.07)); border-color: rgba(255,90,100,.5); }
+[data-theme="dark"] .net-card[data-network="airteltigo"] { background: linear-gradient(180deg, rgba(90,131,240,.2), rgba(228,0,43,.07)); border-color: rgba(134,168,255,.45); }
+[data-theme="dark"] .net-card[data-network="mtn"] .check input { accent-color: #ffcb05; }
+[data-theme="dark"] .net-card[data-network="airteltigo"] .check input { accent-color: #86a8ff; }
+
+/* Things that stay "paper white" (receipts, logo tiles) keep dark text. */
+[data-theme="dark"] .receipt, [data-theme="dark"] .net-tile {
+  --ink: #0d1b33; --ink-2: #3c4a63; --muted: #5d6a82;
+  --line: rgba(13,27,51,.09); --line-strong: rgba(13,27,51,.16);
+  color: var(--ink);
+}
+[data-theme="dark"] .receipt { --paid: #157a4a; box-shadow: 0 18px 40px -22px rgba(0,0,0,.8); }
+[data-theme="dark"] .net-tile:has(input:checked)::after { background: #0d1b33; color: #fff; }
+[data-theme="dark"] .net-mtn:has(input:checked) { box-shadow: 0 0 0 3px rgba(255,203,5,.45); }
+}
+@media (max-width: 420px) {
+  .brand-text b { font-size: .86rem; }
+  .brand-text span { font-size: .7rem; }
+  .brand-logo { width: 36px; height: 36px; }
+}
