@@ -166,12 +166,11 @@ export async function review(route) {
 // ---------------------------------------------------------------- members
 export async function members() {
   await loadCounts();
-  const weekAgo = new Date(Date.now() - 7 * 864e5).toISOString();
   const [roster, people, owed, proposals] = await Promise.all([
     fetchAll(() => sb.from('members').select('*').order('full_name')),
     profilesById(),
     fetchAll(() => sb.from('dues_overview').select('member_id, amount_due, state').in('state', ['overdue', 'open'])),
-    run(sb.from('admin_role_proposals').select('*').is('closed_at', null).gt('created_at', weekAgo)),
+    rpc('admin_open_role_proposals'),
   ]);
   const proposalFor = new Map(proposals.map((x) => [x.profile_id, x]));
   const me = state.session.user.id;
@@ -272,12 +271,14 @@ export async function members() {
           h('div', {}, h('p', { class: 'item-title' }, `${x.make_admin ? 'Make' : 'Remove'} ${target?.full_name || 'someone'} ${x.make_admin ? 'an admin' : 'as admin'}`),
             h('p', { class: 'small muted' }, `Proposed by ${people.get(x.proposed_by)?.full_name || 'an admin'} ${relative(x.created_at)}`)),
           mineProp || x.profile_id === me ? h('span', { class: 'small muted' }, mineProp ? 'Waiting for another admin' : 'About you')
-            : h('button', { class: 'btn small primary', type: 'button', onclick: (e) => busy(e.currentTarget, async () => {
-                if (!await ask({ title: 'Confirm this change?', body: 'Admins approve payments and expenses. Only confirm if the class executives agreed.', confirm: 'Confirm' })) return;
-                await rpc('admin_change_role', { p_profile: x.profile_id, p_make_admin: x.make_admin });
-                toast('Done.'); refreshMembers();
-              }) }, 'Confirm'));
+            : roleButton(target, x, me, people, refreshMembers));
       }))) : null,
+    h('section', { class: 'card' },
+      h('div', { class: 'card-head' }, h('h2', {}, 'Admins'), h('span', { class: 'muted' }, 'changes need two admins')),
+      h('ul', { class: 'list' }, [...people.values()].filter((p) => p.is_admin).map((p) => h('li', { class: 'spread' },
+        h('div', {}, h('p', { class: 'item-title' }, p.full_name, p.id === me ? h('span', { class: 'muted small' }, ' (you)') : null),
+          h('p', { class: 'small muted' }, p.account_status === 'active' ? p.email || '' : 'Account blocked — remove admin rights to finish')),
+        p.id === me ? null : roleButton(p, proposalFor.get(p.id), me, people, refreshMembers))))),
     h('section', { class: 'card' }, h('div', { class: 'card-head' }, h('h2', {}, 'Sign-ups waiting'), h('span', { class: 'muted' }, `${pending.length}`)), pendingList),
     h('section', { class: 'card' }, h('div', { class: 'card-head' }, h('h2', {}, 'Add a member')), addForm),
     h('section', { class: 'card' },
@@ -286,6 +287,21 @@ export async function members() {
       h('div', { class: 'table-wrap' }, h('table', { class: 'data' },
         h('thead', {}, h('tr', {}, h('th', {}, 'Name'), h('th', {}, 'Code'), h('th', {}, 'Account'), h('th', { class: 'r' }, 'Owes'), h('th'))),
         tbody))));
+}
+
+// Admin rights change only when a second admin confirms a proposal.
+function roleButton(p, proposal, me, people, done) {
+  const make = !p.is_admin;
+  const open = proposal && proposal.make_admin === make;
+  if (open && proposal.proposed_by === me) return h('span', { class: 'small muted' }, 'You proposed this; waiting for another admin.');
+  const label = open ? `Confirm ${shortName(people.get(proposal.proposed_by))}’s proposal`
+                     : make ? 'Propose as admin' : 'Propose removing admin';
+  return h('button', { class: `btn small ${open ? 'primary' : ''}`, type: 'button', onclick: (e) => busy(e.currentTarget, async () => {
+    if (open && !await ask({ title: 'Confirm this change?', body: 'Admins approve payments and expenses. Only confirm if the class executives agreed.', confirm: 'Confirm' })) return;
+    const r = await rpc('admin_change_role', { p_profile: p.id, p_make_admin: make });
+    toast(r === 'done' ? 'Done — two admins agreed.' : 'Proposed. Another admin must confirm.');
+    done();
+  }) }, label);
 }
 
 function editMember(m, p, me, done, proposal, people) {
@@ -298,18 +314,6 @@ function editMember(m, p, me, done, proposal, people) {
   }) }, label);
 
   const self = p?.id === me;
-  // Admin rights change only when a second admin confirms a proposal.
-  const roleButton = () => {
-    const make = !p.is_admin;
-    const open = proposal && proposal.make_admin === make;
-    if (open && proposal.proposed_by === me) return h('span', { class: 'small muted' }, 'You proposed an admin change; waiting for another admin.');
-    const label = open ? `Confirm: ${make ? 'make admin' : 'remove admin'} (proposed by ${shortName(people.get(proposal.proposed_by))})`
-                       : make ? 'Propose as admin' : 'Propose removing admin';
-    return action(label, async () => {
-      const r = await rpc('admin_change_role', { p_profile: p.id, p_make_admin: make });
-      toast(r === 'done' ? 'Done — two admins agreed.' : 'Proposed. Another admin must confirm.');
-    }, open ? 'primary' : '');
-  };
   const dlg = h('dialog', { class: 'sheet' },
     h('h2', {}, m.full_name), h('p', { class: 'small muted mono' }, m.member_code),
     h('div', { class: 'stack', style: null },
@@ -322,12 +326,13 @@ function editMember(m, p, me, done, proposal, people) {
           toast('Saved.');
         }, 'primary'))),
     p && !self ? h('div', { class: 'stack' }, h('hr', { class: 'divider' }), h('h3', {}, 'Account'),
-      h('p', { class: 'small muted' }, `${p.email || ''}`),
+      h('p', { class: 'small muted' }, p.is_admin ? `${p.email || ''} · admin — remove admin rights before blocking` : `${p.email || ''}`),
       h('div', { class: 'row wrap' },
-        p.account_status === 'active'
-          ? action('Block account', () => rpc('admin_set_account_status', { p_profile: p.id, p_status: 'suspended' }), 'danger')
-          : action('Activate account', () => rpc('admin_set_account_status', { p_profile: p.id, p_status: 'active' })),
-        p.account_status === 'active' ? roleButton() : null,
+        p.is_admin ? null
+          : p.account_status === 'active'
+            ? action('Block account', () => rpc('admin_set_account_status', { p_profile: p.id, p_status: 'suspended' }), 'danger')
+            : action('Activate account', () => rpc('admin_set_account_status', { p_profile: p.id, p_status: 'active' })),
+        p.account_status === 'active' || p.is_admin ? roleButton(p, proposal, me, people, () => { dlg.close(); dlg.remove(); done(); }) : null,
         action('Unlink code', () => rpc('admin_release_member_code', { p_member: m.id })))) : null,
     self ? h('p', { class: 'small muted' }, 'This is you. Another admin must change your account.') : null,
     h('div', { class: 'sheet-actions' }, h('button', { class: 'btn ghost', type: 'button', onclick: () => { dlg.close(); dlg.remove(); } }, 'Close')));

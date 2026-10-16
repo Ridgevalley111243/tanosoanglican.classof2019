@@ -313,7 +313,16 @@ begin
   if public.admin_change_role(pup, true) <> 'done' then raise exception 'FAIL 19: second admin could not confirm'; end if;
   perform set_config('request.jwt.claims', json_build_object('sub', pup, 'role', 'authenticated')::text, true);
   if public.admin_change_role(a1, false) <> 'proposed' then raise exception 'FAIL 19: one admin removed another'; end if;
+  -- Blocking an admin would switch their powers off; one admin can't do that either.
+  begin
+    perform public.admin_set_account_status(a1, 'suspended');
+    raise exception 'FAIL 19: one admin blocked another admin';
+  exception when sqlstate 'P0001' then
+    if sqlerrm not like 'This person is an admin%' then raise; end if;
+  end;
   reset role;
+  if not (select is_admin from public.profiles where id = pup) then raise exception 'FAIL 19: confirmed admin not saved'; end if;
+  if not (select is_admin and account_status = 'active' from public.profiles where id = a1) then raise exception 'FAIL 19: a1 lost admin after one vote'; end if;
   checks := checks + 1;
 
   raise exception 'ALL % CHECKS PASSED (rolled back)', checks;
