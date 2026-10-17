@@ -118,7 +118,7 @@ export function terms() {
         'Important actions—approvals, rejections, setting changes, account changes and expenses—are recorded in an audit log that cannot be edited or deleted.')),
 
     sec('8. Your account',
-      ul('Keep your password private. You are responsible for payments recorded from your account.',
+      ul('Keep your password private, and only set up a passkey on a phone or computer that you alone can unlock. You are responsible for payments recorded from your account.',
         'Reminders and decisions about your payments appear as notices inside the site.',
         'Admins may suspend an account that breaks these terms. A suspended account cannot see dues or record payments.')),
 
@@ -138,6 +138,7 @@ export function privacy() {
 
     sec('1. What we collect',
       ul(h('span', {}, h('b', {}, 'Account details: '), 'your full name, email address and password. Your password is stored only in scrambled (hashed) form by our login provider; admins cannot see it.'),
+        h('span', {}, h('b', {}, 'Passkeys (only if you set one up): '), 'a public key, the name of the password manager or device that holds it (for example “iCloud Keychain”), when it was added and when it was last used. Your fingerprint, face or screen lock is checked by your own device and is never sent to us.'),
         h('span', {}, h('b', {}, 'Membership details: '), 'your member code and the phone number you gave.'),
         h('span', {}, h('b', {}, 'Payment records: '), 'for each payment you record—the network, transaction ID, the number you sent from (if you give it), amount, date and time, the months it covers, and its status.'),
         h('span', {}, h('b', {}, 'Review records: '), 'which admins approved, rejected or sent back each payment, and any notes they wrote.'),
@@ -181,7 +182,7 @@ export function privacy() {
         'Complain to the Data Protection Commission of Ghana if you think your information has been misused.')),
 
     sec('9. Security',
-      p('Access is protected by passwords, every table is locked down so people only reach what they are allowed to, and every change to money records goes through checked database functions and the audit log. No system is perfectly secure; tell an admin straight away if you think your account has been used by someone else.')),
+      p('Access is protected by passwords or passkeys, every table is locked down so people only reach what they are allowed to, and every change to money records goes through checked database functions and the audit log. No system is perfectly secure; tell an admin straight away if you think your account has been used by someone else.')),
 
     sec('10. Contact and changes',
       p('Questions or requests about your information: speak to any of the class admins (listed in the class WhatsApp group). If this policy changes, the date at the top will change too.')));

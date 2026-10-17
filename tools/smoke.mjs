@@ -136,6 +136,10 @@ await ctx.route(/supabase\.co/, async (route) => {
     }
     return json(rows);
   }
+  if (url.pathname === '/auth/v1/passkeys') return json(who === 'admin' ? [] : [
+    { id: 'pk-1', friendly_name: 'Google Password Manager', created_at: '2026-10-12T09:30:00Z', last_used_at: '2026-10-16T18:05:00Z' },
+    { id: 'pk-2', friendly_name: 'iCloud Keychain', created_at: '2026-10-15T11:00:00Z' },
+  ]);
   if (url.pathname.startsWith('/auth/v1/user')) return json({ id: uid, email: 'x@y.z', aud: 'authenticated', role: 'authenticated' });
   return json({});
 });

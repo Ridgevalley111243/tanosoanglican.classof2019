@@ -52,12 +52,19 @@ supabase/tests/rules_test.sql   end-to-end test of the rules (rolls itself back)
    not enough to onboard a whole class. Either add your own SMTP (Authentication → Emails → SMTP),
    or turn off "Confirm email" (Authentication → Providers → Email). Turning it off is reasonable here
    because every new account already waits for an admin's approval; password-reset emails still need SMTP to be reliable.
-4. **Founding admins (done 16 Oct 2026):** Eunice Achiaa Annor, Kennedy Agyapong and George Danquah
+4. **Passkeys:** Supabase dashboard → Authentication → Passkeys → turn on *Enable Passkey authentication*, then set
+   - Relying Party Display Name: `Class of 2019 Dues`
+   - Relying Party ID: `ridgevalley111243.github.io` (no `https://`, no path)
+   - Relying Party Origins: `https://ridgevalley111243.github.io`
+
+   Don't change the Relying Party ID once people have set up passkeys: every existing passkey would stop working.
+   Until this is switched on, the "Set up a passkey" button explains that passkeys aren't available yet.
+5. **Founding admins (done 16 Oct 2026):** Eunice Achiaa Annor, Kennedy Agyapong and George Danquah
    were set up directly in the database as active admins with member codes. Every later admin change
    is made from Admin → Members → Manage: one admin proposes, another confirms.
-5. **Before members join:** set the MoMo instructions in Admin → Settings and check the
+6. **Before members join:** set the MoMo instructions in Admin → Settings and check the
    dues start month (November 2026, first due 5 December 2026).
-6. **Share the site link** with the class. Each person registers, sees their member code, and waits for an admin to approve them in Admin → Members. Classmates who can't sign up themselves can be added there by an admin (there's a WhatsApp button to send them their code).
+7. **Share the site link** with the class. Each person registers, sees their member code, and waits for an admin to approve them in Admin → Members. Classmates who can't sign up themselves can be added there by an admin (there's a WhatsApp button to send them their code).
 
 Dues rows are created automatically every day at 08:00 Ghana time (a `pg_cron` job), which also
 sends in-app reminders 5 days before the due date, on it, and when dues are 3+ days overdue.
@@ -67,6 +74,13 @@ sends in-app reminders 5 days before the due date, on it, and when dues are 3+ d
 Paste `supabase/tests/rules_test.sql` into the Supabase SQL editor and run it. It creates fictional
 admins and members, walks through every rule above, and rolls everything back. The last line should read
 `ALL 20 CHECKS PASSED (rolled back)` (it is reported as an error on purpose — that is what undoes the changes).
+
+## Passkeys
+
+Anyone signed in can add a passkey from **Account → Passkeys** (fingerprint, face or screen lock on their phone or
+computer), then use **Sign in with a passkey** on the sign-in page. They can rename or remove their passkeys there.
+Passwords keep working alongside them. This uses supabase-js's built-in passkey support (marked experimental by Supabase,
+opted in in `assets/js/api.js`); the device keeps the private key and Supabase stores only the public key.
 
 ## Light and dark mode
 

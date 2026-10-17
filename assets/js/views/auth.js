@@ -3,6 +3,7 @@ import { h, icon, field, toast, mount, form, sheet, copyText } from '../ui.js';
 import { refresh } from '../nav.js';
 import { themeSwitch } from '../theme.js';
 import { SCHOOL, TERMS_VERSION } from '../config.js';
+import { passkeySignIn } from './passkeys.js';
 
 const siteUrl = () => location.origin + location.pathname;
 
@@ -35,6 +36,7 @@ export function login() {
     field('Password', password()),
     h('button', { class: 'btn primary block', type: 'submit' }, 'Sign in'),
     h('p', { class: 'small' }, h('a', { href: '#/forgot' }, 'Forgot your password?'))),
+    passkeySignIn(),
     h('p', { class: 'auth-switch' }, 'New here? ', h('a', { href: '#/register' }, 'Create your account')));
 }
 

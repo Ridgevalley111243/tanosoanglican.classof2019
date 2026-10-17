@@ -6,6 +6,7 @@ import {
 } from '../ui.js';
 import { go, refresh } from '../nav.js';
 import { GROUP_SHORT, SCHOOL } from '../config.js';
+import { passkeyCard } from './passkeys.js';
 
 const OWING = new Set(OWING_STATES);
 
@@ -323,6 +324,7 @@ export async function account() {
         pwInput.value = '';
         toast('Password changed.');
       }) }, 'Change password')),
+    passkeyCard(),
     h('button', { class: 'btn danger block', type: 'button', onclick: () => sb.auth.signOut() }, icon('out'), 'Sign out'),
   ];
 }
