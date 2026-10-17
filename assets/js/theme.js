@@ -4,7 +4,7 @@ import { h } from './ui.js';
 // chooses, the site follows their phone or computer setting.
 const KEY = 'c19-theme';
 const root = document.documentElement;
-const THEME_COLOR = { light: '#e9f0fa', dark: '#0b1220' };
+const THEME_COLOR = { light: '#e9f0fa', dark: '#000000' };
 
 const current = () => (root.dataset.theme === 'dark' ? 'dark' : 'light');
 

@@ -36,6 +36,7 @@ assets/js/views/           auth.js, member.js, admin.js
 assets/js/xlsx.js          Excel export (no formulas are ever written)
 assets/js/chart.js         dues-by-month chart
 assets/vendor/             supabase-js 2.117.2 (MIT), vendored so there's no CDN dependency
+assets/fonts/              Instrument Sans + Serif (OFL), self-hosted
 supabase/migrations/       the database, in the order it was applied
 supabase/tests/rules_test.sql   end-to-end test of the rules (rolls itself back)
 ```
@@ -69,9 +70,16 @@ admins and members, walks through every rule above, and rolls everything back. T
 
 ## Light and dark mode
 
-A switch in the header (and on the sign-in pages) changes between light and dark. The choice is saved
+A switch in the header (and on the sign-in pages) changes between light and a pure-black dark mode. The choice is saved
 on that device; until someone chooses, the site follows the phone or computer setting. Receipts stay
 white "paper" in both modes and always print in light colours.
+
+## Fonts
+
+Instrument Sans and Instrument Serif are stored in `assets/fonts` (SIL Open Font License, licence files
+included); nothing is loaded from Google. The three files used on the first screen are preloaded. While a
+font is still downloading, a device font sized to match is shown, then the real font swaps in without the
+text moving (`font-display: swap` plus measured `size-adjust` stand-ins in `app.css`).
 
 ## Checking the site
 

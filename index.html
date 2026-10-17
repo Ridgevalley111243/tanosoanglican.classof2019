@@ -8,13 +8,14 @@
   <meta name="theme-color" content="#e9f0fa">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://ypliibgdetwgbdlxjirg.supabase.co wss://ypliibgdetwgbdlxjirg.supabase.co; base-uri 'self'; form-action 'self'; object-src 'none'">
+        content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self' https://ypliibgdetwgbdlxjirg.supabase.co wss://ypliibgdetwgbdlxjirg.supabase.co; base-uri 'self'; form-action 'self'; object-src 'none'">
   <link rel="icon" href="assets/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap">
+  <!-- Fonts live in assets/fonts. The three used on first screen start downloading straight away. -->
+  <link rel="preload" href="assets/fonts/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/instrument-serif-latin-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/instrument-serif-latin-italic.woff2" as="font" type="font/woff2" crossorigin>
   <script src="assets/js/theme-init.js"></script>
   <link rel="stylesheet" href="assets/css/app.css">
 </head>

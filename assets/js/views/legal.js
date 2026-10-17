@@ -164,8 +164,7 @@ export function privacy() {
 
     sec('5. Where it is stored',
       ul('Records are stored with Supabase, our database and login provider, on servers in London, United Kingdom.',
-        'The website itself is hosted on GitHub Pages and contains no personal data.',
-        'Pages load a typeface from Google Fonts, which means your browser contacts Google’s servers when a page opens.')),
+        'The website itself, including its fonts, is hosted on GitHub Pages and contains no personal data. It loads nothing from other companies’ servers.')),
 
     sec('6. On your device',
       p('The site keeps your login session in your browser’s storage so you stay signed in. It uses no tracking cookies. Signing out removes the session.')),
